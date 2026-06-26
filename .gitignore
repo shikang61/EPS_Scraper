@@ -1,0 +1,7 @@
+__pycache__/
+.DS_Store
+dashboard_data.js
+attendees_by_affiliation.csv
+attendees_by_affiliation.json
+_sample_record.json
+.vercel/

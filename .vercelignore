@@ -1,0 +1,9 @@
+# keep the scraper + scraped attendee data OUT of the public deploy.
+# the dashboard pulls data live in-browser; visitors use their own login.
+eps_scraper.py
+__pycache__/
+.DS_Store
+dashboard_data.js
+attendees_by_affiliation.csv
+attendees_by_affiliation.json
+_sample_record.json

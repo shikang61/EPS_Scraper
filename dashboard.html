@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPS Edinburgh 2026 — Attendees by Affiliation</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171f2e; --panel2:#1d2738; --line:#2a3650;
+    --txt:#e6ecf5; --muted:#8b9ab5; --accent:#4f9dff; --accent2:#34d399;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--txt)}
+  header{padding:24px 28px 8px}
+  h1{margin:0;font-size:22px;font-weight:650}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .wrap{padding:16px 28px 48px;max-width:1280px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .kpi .n{font-size:28px;font-weight:700}
+  .kpi .l{color:var(--muted);font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+  .kpi .s{color:var(--accent2);font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 18px}
+  input[type=search]{flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);
+       color:var(--txt);border-radius:9px;padding:10px 13px;font-size:14px}
+  label.chk{color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
+
+  /* pull panel */
+  .pull{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:18px 0}
+  .pullrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pull input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:10px 13px;font-size:14px}
+  .pull input[type=email]{flex:1;min-width:200px}
+  .pull input[type=password]{flex:1;min-width:160px}
+  button{background:var(--accent);color:#06122a;border:0;border-radius:9px;padding:10px 16px;font-size:14px;font-weight:650;cursor:pointer}
+  button:disabled{opacity:.55;cursor:default}
+  .status{font-size:13px;color:var(--muted)}
+  .status.ok{color:var(--accent2)} .status.err{color:#f87171}
+  .note{color:var(--muted);font-size:12px;margin-top:10px}
+
+  /* card grid */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+        transition:border-color .15s}
+  .card.open{border-color:var(--accent)}
+  .card .head{display:flex;align-items:center;gap:12px;padding:0 16px;height:72px;cursor:pointer;user-select:none}
+  .card .head:hover{background:var(--panel2)}
+  .rank{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;min-width:22px;flex:none}
+  .card .title{flex:1;font-weight:600;font-size:14px;line-height:1.25;
+       display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .badge{background:var(--accent);color:#06122a;font-weight:700;font-size:13px;flex:none;
+         border-radius:20px;padding:2px 11px;font-variant-numeric:tabular-nums}
+  .chev{color:var(--muted);transition:transform .18s;font-size:12px;flex:none}
+  .card.open .chev{transform:rotate(90deg)}
+  .people{display:none;border-top:1px solid var(--line);padding:10px 16px 14px;
+       max-height:340px;overflow:auto}
+  .card.open .people{display:block}
+  .people ul{margin:0;padding:0;columns:2;column-gap:18px}
+  .people li{list-style:none;padding:4px 0;color:#cdd8ec;font-size:13px;break-inside:avoid}
+  mark{background:#2f7d52;color:#fff;border-radius:3px;padding:0 2px}
+  .empty{color:var(--muted);padding:30px;text-align:center;grid-column:1/-1}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
+  @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>EPS Edinburgh 2026 — Attendees by Affiliation</h1>
+  <div class="sub">48th EPS Conference on Plasma Physics · cards sorted by attendee count — click to expand</div>
+</header>
+
+<div class="wrap">
+  <div class="pull">
+    <form class="pullrow" id="pullForm" autocomplete="on">
+      <input type="email" id="email" placeholder="EventsAir email" autocomplete="username" required>
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit" id="pullBtn">Pull attendee data</button>
+      <span class="status" id="status"></span>
+    </form>
+    <div class="note">Your credentials go straight from this browser to EventsAir over HTTPS to fetch &amp; decrypt the attendee list. Nothing is stored or sent anywhere else.</div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="ctl">
+    <input type="search" id="q" placeholder="Search affiliation or attendee name…">
+    <label class="chk"><input type="checkbox" id="hideEmpty" checked> hide “no affiliation”</label>
+    <label class="chk"><input type="checkbox" id="expandAll"> expand all</label>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<footer id="foot"></footer>
+
+<script src="dashboard_data.js"></script>
+<script>
+// ---- event constants (mirror eps_scraper.py) ----
+const APP_ID="114ab0d14ad54df48df8b61dfeca42ca", EVENT_SLUG="eps-edinburgh", SLUG="edinburgh2026";
+const BLOB_BASE="https://airdrive.eventsair.com/eventsairwesteuprod/production-orcula-public";
+const WEB_API_URI="https://orcula.eventsair.com";
+const AES_IV_HEX="F5502320F8429037B8DAEF761B189D12", AES_SALT="92AE31A79FEEB2A3", AES_ITERS=1000;
+const AFFILIATION_FIELDS=["Organisation","Organization","Company","CompanyName","Affiliation","Institution","Employer","OrganisationName"];
+const FIRSTNAME_FIELDS=["FirstName","GivenName","Firstname"];
+const LASTNAME_FIELDS=["LastName","Surname","Lastname","FamilyName"];
+const EMPTY="(no affiliation)";
+
+const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const hl = (s,q)=> q ? esc(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>') : esc(s);
+
+// ---- state + rendering ----
+let ALL=[], total=0, realAff=[], withAff=0;
+
+function setData(DATA){
+  ALL = Object.entries(DATA).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0]));
+  total = ALL.reduce((s,[,n])=>s+n.length,0);
+  realAff = ALL.filter(([a])=>a!==EMPTY);
+  withAff = realAff.reduce((s,[,n])=>s+n.length,0);
+  renderKpis(); render();
+  document.getElementById('foot').textContent = `${total} attendees · ${realAff.length} affiliations`;
+}
+
+function renderKpis(){
+  document.getElementById('kpis').innerHTML = [
+    ['Attendees', total, ''],
+    ['Affiliations', realAff.length, ''],
+    ['With affiliation', total?Math.round(withAff/total*100)+'%':'—', total?withAff+' of '+total:''],
+    ['Largest', realAff[0]?realAff[0][1].length:0, realAff[0]?realAff[0][0]:''],
+  ].map(([l,n,s])=>`<div class="kpi"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
+}
+
+function render(){
+  const el = document.getElementById('cards');
+  if(!ALL.length){ el.innerHTML='<div class="empty">Sign in above and press “Pull attendee data” to load the list.</div>'; return; }
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const hide = document.getElementById('hideEmpty').checked;
+  const expandAll = document.getElementById('expandAll').checked;
+  let rows = hide ? ALL.filter(([a])=>a!==EMPTY) : ALL;
+  if(q){
+    rows = rows.map(([a,names])=>{
+      if(a.toLowerCase().includes(q)) return [a,names];
+      const nm = names.filter(n=>n.toLowerCase().includes(q));
+      return nm.length ? [a,nm] : null;
+    }).filter(Boolean);
+  }
+  if(!rows.length){ el.innerHTML='<div class="empty">No matches.</div>'; return; }
+  const openState = (q || expandAll);
+  el.innerHTML = rows.map(([a,names],i)=>
+    `<div class="card${openState?' open':''}">
+       <div class="head">
+         <span class="rank">${i+1}</span>
+         <span class="title">${hl(a,q)}</span>
+         <span class="badge">${names.length}</span>
+         <span class="chev">▶</span>
+       </div>
+       <div class="people"><ul>${names.map(n=>`<li>${hl(n,q)}</li>`).join('')}</ul></div>
+     </div>`).join('');
+  el.querySelectorAll('.card .head').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+}
+
+// ---- pull pipeline (mirror of eps_scraper.py, in the browser) ----
+const hexToBytes = h => Uint8Array.from(h.match(/../g), b=>parseInt(b,16));
+const b64ToBytes = b => Uint8Array.from(atob(b), c=>c.charCodeAt(0));
+
+async function decryptBlob(b64, keyString){
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(keyString), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    {name:'PBKDF2', salt:enc.encode(AES_SALT), iterations:AES_ITERS, hash:'SHA-1'}, baseKey, 128);
+  const aesKey = await crypto.subtle.importKey('raw', bits, {name:'AES-CBC'}, false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({name:'AES-CBC', iv:hexToBytes(AES_IV_HEX)}, aesKey, b64ToBytes(b64));
+  return new TextDecoder().decode(pt);  // Web Crypto strips PKCS7 padding
+}
+
+async function login(email, password){
+  const qs = new URLSearchParams({eventSlug:EVENT_SLUG, slug:SLUG});
+  const body = new URLSearchParams({eventSlug:EVENT_SLUG, slug:SLUG, email, password});
+  const r = await fetch(`${WEB_API_URI}/api/Login/Login?${qs}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','X-Refresh-Capable':'true','X-Login-Version':'2'},
+    body
+  });
+  if(!r.ok) throw new Error(`login HTTP ${r.status}`);
+  const payload = await r.json();
+  const data = payload.data || payload.Data || {};
+  const ud = data.UserDetails;
+  if(!ud) throw new Error(data.ErrorMessage || payload.ErrorMessage || 'login failed');
+  const key = ud.AttendeesDataKey && ud.AttendeesDataKey.Key;
+  if(!key) throw new Error('account has no access to the attendee directory');
+  return key;
+}
+
+const firstPresent = (d,cands)=>{ for(const c of cands) if(d[c]!=null && d[c]!=='') return d[c]; return null; };
+
+function findAttendeeList(obj){
+  if(Array.isArray(obj)) return obj;
+  if(obj && typeof obj==='object'){
+    let best=null;
+    for(const v of Object.values(obj))
+      if(Array.isArray(v) && v.length && typeof v[0]==='object' && (!best || v.length>best.length)) best=v;
+    if(best) return best;
+  }
+  throw new Error('could not locate attendee array in decrypted data');
+}
+
+function groupByAffiliation(attendees){
+  const sample = attendees.slice(0,50);
+  const affField = AFFILIATION_FIELDS.find(f=>sample.some(a=>f in a));
+  if(!affField) throw new Error('could not auto-detect affiliation field');
+  const groups = {};
+  for(const a of attendees){
+    const fn = firstPresent(a,FIRSTNAME_FIELDS) || '';
+    const ln = firstPresent(a,LASTNAME_FIELDS) || '';
+    const name = `${fn} ${ln}`.trim() || a.Name || '(no name)';
+    const aff = String(a[affField] || EMPTY).trim() || EMPTY;
+    (groups[aff] ||= []).push(name);
+  }
+  const out = {};
+  for(const [aff,names] of Object.entries(groups).sort((a,b)=>b[1].length-a[1].length || a[0].toLowerCase().localeCompare(b[0].toLowerCase())))
+    out[aff] = names.sort((x,y)=>x.localeCompare(y));
+  return out;
+}
+
+const setStatus = (msg,cls)=>{ const s=document.getElementById('status'); s.textContent=msg; s.className='status'+(cls?' '+cls:''); };
+
+async function pull(email, password){
+  setStatus('Logging in…');
+  const key = await login(email, password);
+  setStatus('Reading manifest…');
+  const manifest = await (await fetch(`${BLOB_BASE}/${APP_ID}`)).json();
+  const storageId = manifest.Data.AttendeesStorageId;
+  setStatus('Downloading & decrypting…');
+  const blob = await (await fetch(`${BLOB_BASE}/${storageId}`)).json();
+  const plaintext = blob.Encrypted ? await decryptBlob(blob.Data, key) : JSON.stringify(blob.Data);
+  const attendees = findAttendeeList(JSON.parse(plaintext));
+  setStatus('Grouping…');
+  setData(groupByAffiliation(attendees));
+  setStatus(`Loaded ${attendees.length} attendees.`, 'ok');
+}
+
+document.getElementById('pullForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn = document.getElementById('pullBtn');
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  btn.disabled = true;
+  try { await pull(email, password); }
+  catch(err){ setStatus('Error: '+err.message, 'err'); }
+  finally { btn.disabled = false; document.getElementById('password').value=''; }
+});
+
+document.getElementById('q').oninput=render;
+document.getElementById('hideEmpty').onchange=render;
+document.getElementById('expandAll').onchange=render;
+
+// initial paint: use bundled data if present (local dev), else empty state
+if(window.ATTENDEE_DATA && Object.keys(window.ATTENDEE_DATA).length) setData(window.ATTENDEE_DATA);
+else { renderKpis(); render(); }
+</script>
+</body>
+</html>

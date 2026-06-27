@@ -22,7 +22,7 @@ window.affType = (function(){
     "ku leuven":"uni","tu wien":"uni","uct prague":"uni","ipp garching":"inst",
     "indian institute of science":"uni","royal military academy belgium":"uni",
     "a*star":"inst","onera":"inst","extreme light infrastructure eric":"inst",
-    "feat, a*star":"inst","institute of space and plasma sciences":"uni",
+    "feat, a*star":"inst","institute of space and plasma sciences":"uni","tor vergata":"uni",
   };
 
   // checked in order, first match wins

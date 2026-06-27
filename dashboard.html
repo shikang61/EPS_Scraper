@@ -497,7 +497,7 @@ else { renderKpis(); renderMap(); render(); }
 (function(){
   const root = document.documentElement, btn = document.getElementById('theme');
   const set = t=>{ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); btn.textContent = t==='light'?'🌙':'☀️'; };
-  set(localStorage.getItem('theme') || 'dark');
+  set(localStorage.getItem('theme') || 'light');
   btn.onclick = ()=>set(root.getAttribute('data-theme')==='light' ? 'dark' : 'light');
 })();
 </script>

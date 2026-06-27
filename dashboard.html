@@ -93,17 +93,22 @@
        border-radius:20px;padding:1px 9px}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
   .cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
-  .col .colcards{display:flex;flex-direction:column;gap:12px}
+  .col .colcards{display:flex;flex-direction:column;gap:0}
   .col-uni{--c:#4f9dff} .col-inst{--c:#34d399} .col-company{--c:#f97316} .col-org{--c:#a78bfa} .col-other{--c:#8b9ab5}
   .col{border:1px solid var(--line);border-radius:14px;padding:8px 14px 16px;background:var(--panel);
        background:color-mix(in srgb, var(--c) 13%, var(--panel))}
   .col .sec{color:var(--c)}
   .col .sec span{color:var(--c);border-color:var(--c);background:transparent;opacity:1}
-  .rgn{display:flex;align-items:center;gap:8px;margin:14px 2px 2px;font-size:10px;font-weight:700;
-       text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-  .rgn:first-child{margin-top:2px}
-  .rgn span{font-weight:600;opacity:.7}
-  .rgn::after{content:"";flex:1;height:1px;background:var(--line)}
+  .rgn{display:flex;align-items:center;gap:8px;margin:14px 2px 8px;font-size:10px;font-weight:700;
+       text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;user-select:none}
+  .rgngroup:first-child .rgn{margin-top:2px}
+  .rgn:hover{color:var(--txt)}
+  .rgn .rc{font-weight:600;opacity:.7}
+  .rgn .rline{flex:1;height:1px;background:var(--line)}
+  .rgn .rchev{font-size:9px;color:var(--muted);transition:transform .15s}
+  .rgngroup:not(.collapsed) .rchev{transform:rotate(90deg)}
+  .rgngroup.collapsed .rgncards{display:none}
+  .rgncards{display:flex;flex-direction:column;gap:12px}
   @media(max-width:1100px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:600px){.cols{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
@@ -404,8 +409,9 @@ function render(){
     const byR = {}; list.forEach(r=>{ const rg=regionOf(r[0]); (byR[rg] ||= []).push(r); });
     return Object.keys(byR)
       .sort((a,b)=>byR[b].length-byR[a].length || REGION_ORDER.indexOf(a)-REGION_ORDER.indexOf(b))
-      .map(rg=>`<div class="rgn">${esc(REGION_LABELS[rg]||rg)}<span>${byR[rg].length}</span></div>`+
-              byR[rg].map(cardHTML).join('')).join('');
+      .map(rg=>`<div class="rgngroup"><div class="rgn">${esc(REGION_LABELS[rg]||rg)}`+
+              `<span class="rc">${byR[rg].length}</span><span class="rline"></span><i class="rchev">▶</i></div>`+
+              `<div class="rgncards">${byR[rg].map(cardHTML).join('')}</div></div>`).join('');
   };
   el.innerHTML = `<div class="cols">`+ order.filter(t=>groups[t].length).map(t=>
     `<section class="col col-${t}"><h2 class="sec">${esc(tl[t]||t)} <span>${groups[t].length}</span></h2>`+
@@ -415,6 +421,7 @@ function render(){
     if(window.getSelection && String(window.getSelection())) return;  // don't toggle while selecting/copying text
     h.parentElement.classList.toggle('open');
   });
+  el.querySelectorAll('.rgn').forEach(r=>r.onclick=()=>r.parentElement.classList.toggle('collapsed'));
 }
 
 // ---- pull pipeline (mirror of eps_scraper.py, in the browser) ----

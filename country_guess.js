@@ -69,6 +69,7 @@ window.guessCountry = (function(){
     ["hun-ren","HU"],["tor vergata","IT"],["southwestern institute of physics","CN"],
     ["extreme light infrastructure eric","CZ"],
     ["institute of physics","CN"],["institute of space and plasma sciences","TW"],
+    ["rutherford appleton","GB"],["stfc","GB"],
     // --- country names ---
     ["united kingdom","GB"],["u.k.","GB"],["england","GB"],["scotland","GB"],
     ["wales","GB"],["britain","GB"],["uk","GB"],

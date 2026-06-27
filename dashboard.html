@@ -7,12 +7,21 @@
 <style>
   :root{
     --bg:#0f1420; --panel:#171f2e; --panel2:#1d2738; --line:#2a3650;
-    --txt:#e6ecf5; --muted:#8b9ab5; --accent:#4f9dff; --accent2:#34d399;
+    --txt:#e6ecf5; --muted:#8b9ab5; --accent:#4f9dff; --accent2:#34d399; --land:#1b2536;
   }
+  :root[data-theme="light"]{
+    --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f7; --line:#d4dbe8;
+    --txt:#1a2233; --muted:#5a6884; --accent:#2563eb; --accent2:#0f9d6b; --land:#dde4ef;
+  }
+  :root[data-theme="light"] .badge,
+  :root[data-theme="light"] .pull button{background:#f97316;color:#fff}
   *{box-sizing:border-box}
   body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
        background:var(--bg);color:var(--txt)}
-  header{padding:24px 28px 8px}
+  header{padding:24px 28px 8px;position:relative}
+  .themebtn{position:absolute;top:20px;right:28px;background:var(--panel2);color:var(--txt);
+       border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:15px;cursor:pointer;line-height:1}
+  .themebtn:hover{border-color:var(--accent)}
   h1{margin:0;font-size:22px;font-weight:650}
   .sub{color:var(--muted);font-size:13px;margin-top:4px}
   .wrap{padding:16px 28px 48px;max-width:1280px;margin:0 auto}
@@ -25,6 +34,37 @@
   input[type=search]{flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);
        color:var(--txt);border-radius:9px;padding:10px 13px;font-size:14px}
   label.chk{color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
+
+  select#country{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+       border-radius:9px;padding:10px 13px;font-size:14px;cursor:pointer;max-width:240px}
+
+  /* choropleth map */
+  .map{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 10px;margin:18px 0}
+  .map:empty{display:none}
+  .maptop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .map h2{margin:0;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .mapbtns{display:flex;gap:6px}
+  .mapbtns button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;
+       padding:4px 11px;font-size:13px;font-weight:650;cursor:pointer;min-width:32px}
+  .mapbtns button.ghost{font-weight:500;color:var(--muted)}
+  .mapbtns button:hover{border-color:var(--accent)}
+  .map svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:8px;cursor:grab;touch-action:pan-y}
+  .map svg:active{cursor:grabbing}
+  .map .land{fill:var(--land);stroke:var(--line);stroke-width:.3;vector-effect:non-scaling-stroke}
+  .map .cc,.map .cm{fill:var(--line);stroke:var(--line);cursor:pointer;vector-effect:non-scaling-stroke;transition:fill .12s}
+  .map .cc{stroke-width:.4} .map .cm{stroke-width:.6}
+  .map svg .q1{fill:#ffffb2}.map svg .q2{fill:#fec44f}.map svg .q3{fill:#fd8d3c}.map svg .q4{fill:#f03b20}.map svg .q5{fill:#bd0026}
+  .map .cc:hover,.map .cm:hover{stroke:var(--txt);stroke-width:1.2}
+  .map .cc.sel,.map .cm.sel{fill:var(--accent);stroke:var(--txt);stroke-width:1.2}
+  .map #labels text{fill:var(--txt);stroke:var(--bg);stroke-width:2;paint-order:stroke;stroke-linejoin:round;
+       text-anchor:middle;dominant-baseline:central;vector-effect:non-scaling-stroke;pointer-events:none}
+  .map .mlegend{color:var(--muted);font-size:12px;margin-top:6px}
+  .mlegend .scale{display:inline-flex;gap:1px;margin:0 5px;vertical-align:middle}
+  .mlegend .scale i{width:15px;height:10px;background:var(--accent2);display:inline-block;border-radius:1px}
+  .mlegend .scale i.q1{background:#ffffb2}.mlegend .scale i.q2{background:#fec44f}.mlegend .scale i.q3{background:#fd8d3c}.mlegend .scale i.q4{background:#f03b20}.mlegend .scale i.q5{background:#bd0026}
+  .maptip{position:fixed;z-index:20;pointer-events:none;background:var(--panel2);border:1px solid var(--line);
+       border-radius:8px;padding:7px 10px;font-size:12px;max-width:240px;box-shadow:0 6px 20px rgba(0,0,0,.45);display:none}
+  .maptip b{color:var(--txt)}
 
   /* pull panel */
   .pull{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:18px 0}
@@ -39,15 +79,31 @@
   .note{color:var(--muted);font-size:12px;margin-top:10px}
 
   /* card grid */
+  .sec{font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);
+       margin:24px 2px 12px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .sec:first-child{margin-top:6px}
+  .sec span{font-weight:600;font-size:12px;opacity:.8;background:var(--panel2);border:1px solid var(--line);
+       border-radius:20px;padding:1px 9px}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
+  .cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+  .col .colcards{display:flex;flex-direction:column;gap:12px}
+  .col-uni{--c:#4f9dff} .col-inst{--c:#34d399} .col-company{--c:#f97316} .col-org{--c:#a78bfa} .col-other{--c:#8b9ab5}
+  .col{border:1px solid var(--line);border-radius:14px;padding:8px 14px 16px;background:var(--panel);
+       background:color-mix(in srgb, var(--c) 13%, var(--panel))}
+  .col .sec{color:var(--c)}
+  .col .sec span{color:var(--c);border-color:var(--c);background:transparent;opacity:1}
+  @media(max-width:1100px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:600px){.cols{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
         transition:border-color .15s}
   .card.open{border-color:var(--accent)}
   .card .head{display:flex;align-items:center;gap:12px;padding:0 16px;height:72px;cursor:pointer;user-select:none}
   .card .head:hover{background:var(--panel2)}
   .rank{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;min-width:22px;flex:none}
+  .head .flag{flex:none;width:20px;text-align:center;font-size:15px;line-height:1}
   .card .title{flex:1;font-weight:600;font-size:14px;line-height:1.25;
-       display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+       display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+       user-select:text;cursor:text}
   .badge{background:var(--accent);color:#06122a;font-weight:700;font-size:13px;flex:none;
          border-radius:20px;padding:2px 11px;font-variant-numeric:tabular-nums}
   .chev{color:var(--muted);transition:transform .18s;font-size:12px;flex:none}
@@ -56,17 +112,29 @@
        max-height:340px;overflow:auto}
   .card.open .people{display:block}
   .people ul{margin:0;padding:0;columns:2;column-gap:18px}
-  .people li{list-style:none;padding:4px 0;color:#cdd8ec;font-size:13px;break-inside:avoid}
+  .people li{list-style:none;padding:4px 0;color:var(--txt);font-size:13px;break-inside:avoid}
   mark{background:#2f7d52;color:#fff;border-radius:3px;padding:0 2px}
   .empty{color:var(--muted);padding:30px;text-align:center;grid-column:1/-1}
   footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){
+    header{padding:18px 14px 6px}
+    h1{font-size:18px;padding-right:46px}
+    .sub{font-size:12px}
+    .wrap{padding:12px 14px 40px}
+    .kpis{gap:10px} .kpi{padding:13px 14px} .kpi .n{font-size:23px}
+    .ctl{gap:8px} select#country{max-width:none;flex:1 1 100%}
+    .map{padding:12px 12px 8px}
+    .people ul{columns:1}
+    .themebtn{top:16px;right:14px}
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>EPS Edinburgh 2026 — Attendees by Affiliation</h1>
   <div class="sub">48th EPS Conference on Plasma Physics · cards sorted by attendee count — click to expand</div>
+  <button id="theme" class="themebtn" title="Toggle light / dark" aria-label="Toggle theme"></button>
 </header>
 
 <div class="wrap">
@@ -80,17 +148,24 @@
     <div class="note">Your credentials go straight from this browser to EventsAir over HTTPS to fetch &amp; decrypt the attendee list. Nothing is stored or sent anywhere else.</div>
   </div>
   <div class="kpis" id="kpis"></div>
+  <div class="map" id="map"></div>
   <div class="ctl">
     <input type="search" id="q" placeholder="Search affiliation or attendee name…">
+    <select id="country"><option value="">All countries</option></select>
     <label class="chk"><input type="checkbox" id="hideEmpty" checked> hide “no affiliation”</label>
     <label class="chk"><input type="checkbox" id="expandAll"> expand all</label>
   </div>
-  <div class="cards" id="cards"></div>
+  <div id="cards"></div>
 </div>
 
 <footer id="foot"></footer>
+<div class="maptip" id="maptip"></div>
 
 <script src="dashboard_data.js"></script>
+<script src="affil_country.js"></script>
+<script src="country_guess.js"></script>
+<script src="affil_type.js"></script>
+<script src="world_map.js"></script>
 <script>
 // ---- event constants (mirror eps_scraper.py) ----
 const APP_ID="114ab0d14ad54df48df8b61dfeca42ca", EVENT_SLUG="eps-edinburgh", SLUG="edinburgh2026";
@@ -101,20 +176,32 @@ const AFFILIATION_FIELDS=["Organisation","Organization","Company","CompanyName",
 const FIRSTNAME_FIELDS=["FirstName","GivenName","Firstname"];
 const LASTNAME_FIELDS=["LastName","Surname","Lastname","FamilyName"];
 const EMPTY="(no affiliation)";
+const IGNORE_AFF = new Set(["interdisciplinary graduate"]);  // not real affiliations (normKey'd)
 
 const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const hl = (s,q)=> q ? esc(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>') : esc(s);
 
 // ---- state + rendering ----
-let ALL=[], total=0, realAff=[], withAff=0;
+let ALL=[], total=0, realAff=[], withAff=0, ISOCOUNT={}, ISONONE=0;
 
 function setData(DATA){
-  ALL = Object.entries(DATA).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0]));
+  ALL = Object.entries(DATA).filter(([a])=>!IGNORE_AFF.has(normKey(a)))
+    .sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0]));
   total = ALL.reduce((s,[,n])=>s+n.length,0);
   realAff = ALL.filter(([a])=>a!==EMPTY);
   withAff = realAff.reduce((s,[,n])=>s+n.length,0);
-  renderKpis(); render();
+  computeCounts();
+  renderKpis(); buildCountryFilter(); renderMap(); render();
   document.getElementById('foot').textContent = `${total} attendees · ${realAff.length} affiliations`;
+}
+
+function computeCounts(){
+  ISOCOUNT = {}; ISONONE = 0;
+  for(const [a,names] of ALL){
+    if(a===EMPTY) continue;
+    const iso = affIso(a);
+    if(iso) ISOCOUNT[iso] = (ISOCOUNT[iso]||0)+names.length; else ISONONE += names.length;
+  }
 }
 
 function renderKpis(){
@@ -126,13 +213,138 @@ function renderKpis(){
   ].map(([l,n,s])=>`<div class="kpi"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
 }
 
+const isoFlag = iso => iso.replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt(0)));
+const affIso = a => (window.AFFIL_COUNTRY||{})[normKey(a)] || (window.guessCountry ? window.guessCountry(a) : null);
+
+function buildCountryFilter(){
+  const sel = document.getElementById('country');
+  const N = window.COUNTRY_NAMES||{};
+  const isos = Object.keys(ISOCOUNT).sort((x,y)=>ISOCOUNT[y]-ISOCOUNT[x] || (N[x]||x).localeCompare(N[y]||y));
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">All countries</option>`+
+    isos.map(iso=>`<option value="${iso}">${isoFlag(iso)} ${esc(N[iso]||iso)} (${ISOCOUNT[iso]})</option>`).join('')+
+    (ISONONE ? `<option value="__none__">— No country — (${ISONONE})</option>` : '');
+  if([...sel.options].some(o=>o.value===prev)) sel.value = prev;
+}
+
+// ---- choropleth map: zoom (wheel) + drag (pan) + click-to-filter ----
+function renderMap(){
+  const el = document.getElementById('map');
+  const W = window.WORLD_MAP;
+  if(!W){ el.innerHTML=''; return; }
+  const reps = Object.keys(ISOCOUNT);
+  const max = Math.max(1, ...Object.values(ISOCOUNT));
+  const qof = c => Math.min(5, Math.max(1, Math.ceil(Math.sqrt(c/max)*5)));
+  const N = window.COUNTRY_NAMES||{};
+  const shapes = reps.filter(iso=>W.paths[iso])
+    .map(iso=>`<path class="cc q${qof(ISOCOUNT[iso])}" data-iso="${iso}" d="${W.paths[iso]}"></path>`).join('');
+  const markers = reps.filter(iso=>!W.paths[iso] && W.centroids[iso])
+    .map(iso=>{const c=W.centroids[iso];return `<circle class="cm q${qof(ISOCOUNT[iso])}" data-iso="${iso}" cx="${c[0]}" cy="${c[1]}" r="5"></circle>`;}).join('');
+  const labels = reps.filter(iso=>W.centroids[iso])
+    .map(iso=>{const c=W.centroids[iso];return `<text data-c="${ISOCOUNT[iso]}" x="${c[0]}" y="${c[1]}">${esc(N[iso]||iso)}</text>`;}).join('');
+  const scale = `<span class="scale"><i class="q1"></i><i class="q2"></i><i class="q3"></i><i class="q4"></i><i class="q5"></i></span>`;
+  el.innerHTML =
+    `<div class="maptop"><h2>Attendees by country</h2><div class="mapbtns">`+
+      `<button type="button" id="zout">−</button><button type="button" id="zin">+</button>`+
+      `<button type="button" id="mreset" class="ghost">Reset</button></div></div>`+
+    `<svg id="csvg" viewBox="0 0 ${W.w} ${W.h}" aria-label="Attendees by country">`+
+      `<g id="mapg"><path class="land" d="${W.land}"></path>${shapes}${markers}`+
+        `<g id="labels" font-size="7">${labels}</g></g></svg>`+
+    `<div class="mlegend">${reps.length} countries · fewer ${scale} more · click to filter · scroll to zoom, drag to pan</div>`;
+  wireMap();
+  applyMapSelection();
+}
+
+function wireMap(){
+  const W = window.WORLD_MAP;
+  const svg = document.getElementById('csvg'), g = document.getElementById('mapg'),
+        tip = document.getElementById('maptip');
+  let scale=1, tx=0, ty=0, drag=null, moved=0;
+  const labels = document.getElementById('labels');
+  const declutter = ()=>{                       // hide labels that overlap a higher-priority one
+    if(!labels) return;
+    const texts = [...labels.querySelectorAll('text')].sort((a,b)=>(+b.dataset.c)-(+a.dataset.c));
+    const placed = [];
+    for(const t of texts){
+      t.style.display = '';
+      const b = t.getBBox();                     // user units; *scale+translate -> screen space
+      const x0=b.x*scale+tx, y0=b.y*scale+ty, x1=(b.x+b.width)*scale+tx, y1=(b.y+b.height)*scale+ty;
+      if(placed.some(p=>x0<p.x1+1 && x1>p.x0-1 && y0<p.y1+1 && y1>p.y0-1)) t.style.display='none';
+      else placed.push({x0,y0,x1,y1});
+    }
+  };
+  const apply = ()=>{
+    g.setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);
+    if(labels){
+      const cw = svg.clientWidth || W.w;                       // ~11px on-screen on any device
+      labels.setAttribute('font-size', (11*W.w/cw/scale).toFixed(2));
+      declutter();
+    }
+  };
+  const zoom = (f, cx=W.w/2, cy=W.h/2)=>{
+    const ns = Math.min(14, Math.max(1, scale*f)), k = ns/scale;
+    tx = cx-(cx-tx)*k; ty = cy-(cy-ty)*k; scale = ns; apply();
+  };
+  svg._reset = ()=>{ scale=1; tx=0; ty=0; apply(); };
+  svg.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    zoom(e.deltaY<0?1.2:1/1.2, (e.clientX-r.left)/r.width*W.w, (e.clientY-r.top)/r.height*W.h);
+  }, {passive:false});
+  svg.addEventListener('pointerdown', e=>{ drag={tx,ty,sx:e.clientX,sy:e.clientY}; moved=0; });
+  svg.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const r = svg.getBoundingClientRect(), sc = W.w/r.width;
+    moved = Math.abs(e.clientX-drag.sx)+Math.abs(e.clientY-drag.sy);
+    tx = drag.tx+(e.clientX-drag.sx)*sc; ty = drag.ty+(e.clientY-drag.sy)*sc; apply();
+  });
+  svg.addEventListener('pointerup', ()=>{ drag=null; });
+  svg.addEventListener('pointerleave', ()=>{ drag=null; tip.style.display='none'; });
+  g.querySelectorAll('.cc,.cm').forEach(s=>{
+    const iso = s.dataset.iso;
+    s.addEventListener('mousemove', e=>{
+      tip.style.display='block';
+      tip.style.left = Math.min(e.clientX+14, innerWidth-200)+'px';
+      tip.style.top = (e.clientY+14)+'px';
+      tip.innerHTML = `<b>${isoFlag(iso)} ${esc((window.COUNTRY_NAMES||{})[iso]||iso)}</b> — ${ISOCOUNT[iso]} attendee${ISOCOUNT[iso]!=1?'s':''}`;
+    });
+    s.addEventListener('mouseleave', ()=>{ tip.style.display='none'; });
+    s.addEventListener('click', ()=>{
+      if(moved>6) return;                 // was a drag, not a click
+      const sel = document.getElementById('country');
+      sel.value = (sel.value===iso) ? '' : iso;
+      render();
+    });
+  });
+  document.getElementById('zin').onclick  = ()=>zoom(1.4);
+  document.getElementById('zout').onclick = ()=>zoom(1/1.4);
+  svg.addEventListener('click', e=>{          // click empty map (not a country) -> deselect
+    if(moved>6 || e.target.closest('.cc,.cm')) return;
+    const sel = document.getElementById('country');
+    if(sel.value){ sel.value=''; render(); }
+  });
+  document.getElementById('mreset').onclick = ()=>{
+    document.getElementById('country').value=''; svg._reset(); render();
+  };
+  if(window.ResizeObserver) new ResizeObserver(()=>apply()).observe(svg);  // re-fit labels on resize/rotate
+  apply();  // initial label sizing + declutter
+}
+
+function applyMapSelection(){
+  const v = document.getElementById('country').value;
+  document.querySelectorAll('#mapg .cc,#mapg .cm').forEach(s=>s.classList.toggle('sel', s.dataset.iso===v));
+}
+
 function render(){
   const el = document.getElementById('cards');
   if(!ALL.length){ el.innerHTML='<div class="empty">Sign in above and press “Pull attendee data” to load the list.</div>'; return; }
   const q = document.getElementById('q').value.trim().toLowerCase();
   const hide = document.getElementById('hideEmpty').checked;
   const expandAll = document.getElementById('expandAll').checked;
+  const country = document.getElementById('country').value;
+  applyMapSelection();
   let rows = hide ? ALL.filter(([a])=>a!==EMPTY) : ALL;
+  if(country) rows = rows.filter(([a])=> country==='__none__' ? !affIso(a) : affIso(a)===country);
   if(q){
     rows = rows.map(([a,names])=>{
       if(a.toLowerCase().includes(q)) return [a,names];
@@ -142,17 +354,32 @@ function render(){
   }
   if(!rows.length){ el.innerHTML='<div class="empty">No matches.</div>'; return; }
   const openState = (q || expandAll);
-  el.innerHTML = rows.map(([a,names],i)=>
-    `<div class="card${openState?' open':''}">
+  const cardHTML = ([a,names],i)=>{
+    const iso = affIso(a);
+    return `<div class="card${openState?' open':''}">
        <div class="head">
          <span class="rank">${i+1}</span>
+         <span class="flag" title="${esc(iso?((window.COUNTRY_NAMES||{})[iso]||iso):'')}">${iso?isoFlag(iso):''}</span>
          <span class="title">${hl(a,q)}</span>
          <span class="badge">${names.length}</span>
          <span class="chev">▶</span>
        </div>
        <div class="people"><ul>${names.map(n=>`<li>${hl(n,q)}</li>`).join('')}</ul></div>
-     </div>`).join('');
-  el.querySelectorAll('.card .head').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+     </div>`;
+  };
+  const typeOf = window.affType || (()=>'other');
+  const order = window.TYPE_ORDER || ['other'];
+  const groups = {}; order.forEach(t=>groups[t]=[]);
+  rows.forEach(r=>{ (groups[typeOf(r[0])] || groups.other).push(r); });
+  const tl = window.TYPE_LABELS || {};
+  el.innerHTML = `<div class="cols">`+ order.filter(t=>groups[t].length).map(t=>
+    `<section class="col col-${t}"><h2 class="sec">${esc(tl[t]||t)} <span>${groups[t].length}</span></h2>`+
+    `<div class="colcards">${groups[t].map(cardHTML).join('')}</div></section>`
+  ).join('') +`</div>`;
+  el.querySelectorAll('.card .head').forEach(h=>h.onclick=()=>{
+    if(window.getSelection && String(window.getSelection())) return;  // don't toggle while selecting/copying text
+    h.parentElement.classList.toggle('open');
+  });
 }
 
 // ---- pull pipeline (mirror of eps_scraper.py, in the browser) ----
@@ -189,6 +416,9 @@ async function login(email, password){
 
 const firstPresent = (d,cands)=>{ for(const c of cands) if(d[c]!=null && d[c]!=='') return d[c]; return null; };
 
+// mirror of eps_scraper.py norm_key: lowercase, collapse whitespace, strip edge punctuation
+const normKey = a => a.replace(/\s+/g,' ').trim().toLowerCase().replace(/^[ .,;:]+|[ .,;:]+$/g,'');
+
 function findAttendeeList(obj){
   if(Array.isArray(obj)) return obj;
   if(obj && typeof obj==='object'){
@@ -204,17 +434,19 @@ function groupByAffiliation(attendees){
   const sample = attendees.slice(0,50);
   const affField = AFFILIATION_FIELDS.find(f=>sample.some(a=>f in a));
   if(!affField) throw new Error('could not auto-detect affiliation field');
-  const groups = {};
+  const groups = {}, labels = {};  // labels: norm key -> first-seen display casing
   for(const a of attendees){
     const fn = firstPresent(a,FIRSTNAME_FIELDS) || '';
     const ln = firstPresent(a,LASTNAME_FIELDS) || '';
     const name = `${fn} ${ln}`.trim() || a.Name || '(no name)';
     const aff = String(a[affField] || EMPTY).trim() || EMPTY;
-    (groups[aff] ||= []).push(name);
+    const key = normKey(aff);
+    if(!(key in labels)) labels[key] = aff;
+    (groups[key] ||= []).push(name);
   }
   const out = {};
-  for(const [aff,names] of Object.entries(groups).sort((a,b)=>b[1].length-a[1].length || a[0].toLowerCase().localeCompare(b[0].toLowerCase())))
-    out[aff] = names.sort((x,y)=>x.localeCompare(y));
+  for(const [key,names] of Object.entries(groups).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0])))
+    out[labels[key]] = names.sort((x,y)=>x.localeCompare(y));
   return out;
 }
 
@@ -247,12 +479,21 @@ document.getElementById('pullForm').addEventListener('submit', async e=>{
 });
 
 document.getElementById('q').oninput=render;
+document.getElementById('country').onchange=render;
 document.getElementById('hideEmpty').onchange=render;
 document.getElementById('expandAll').onchange=render;
 
 // initial paint: use bundled data if present (local dev), else empty state
 if(window.ATTENDEE_DATA && Object.keys(window.ATTENDEE_DATA).length) setData(window.ATTENDEE_DATA);
-else { renderKpis(); render(); }
+else { renderKpis(); renderMap(); render(); }
+
+// theme toggle (persisted)
+(function(){
+  const root = document.documentElement, btn = document.getElementById('theme');
+  const set = t=>{ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); btn.textContent = t==='light'?'🌙':'☀️'; };
+  set(localStorage.getItem('theme') || 'dark');
+  btn.onclick = ()=>set(root.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+})();
 </script>
 </body>
 </html>

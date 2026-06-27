@@ -57,6 +57,9 @@ AFFILIATION_FIELDS = [
 FIRSTNAME_FIELDS = ["FirstName", "GivenName", "Firstname"]
 LASTNAME_FIELDS  = ["LastName", "Surname", "Lastname", "FamilyName"]
 
+# Affiliations that aren't real organisations — dropped from output (norm_key'd).
+IGNORE_AFFILIATIONS = {"interdisciplinary graduate"}
+
 
 def http_get(url):
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
@@ -128,6 +131,16 @@ def find_attendee_list(obj):
     raise SystemExit("Could not locate attendee array in decrypted data.")
 
 
+def norm_key(aff):
+    """Grouping key: lowercase, collapse whitespace, strip edge punctuation.
+
+    Conservative — internal text is preserved, so it only merges variants that
+    differ by case, spacing or trailing/leading '.,;:' (e.g. 'MIT'/'mit',
+    'University of X,'/'University of X'). Display label keeps first-seen casing.
+    """
+    return " ".join(aff.split()).lower().strip(" .,;:")
+
+
 def main():
     email = os.environ.get("EPS_EMAIL") or input("EventsAir email: ").strip()
     password = os.environ.get("EPS_PASSWORD") or getpass.getpass("Password: ")
@@ -177,16 +190,21 @@ def main():
 
     print("[4/4] Grouping by affiliation ...", file=sys.stderr)
     groups = defaultdict(list)
+    labels = {}  # normalised (lowercase) key -> first-seen display casing
     for a in attendees:
         fn = first_present(a, FIRSTNAME_FIELDS) or ""
         ln = first_present(a, LASTNAME_FIELDS) or ""
         name = (f"{fn} {ln}").strip() or a.get("Name") or "(no name)"
         aff = (a.get(aff_field) or "(no affiliation)").strip() or "(no affiliation)"
-        groups[aff].append(name)
+        key = norm_key(aff)
+        if key in IGNORE_AFFILIATIONS:
+            continue
+        labels.setdefault(key, aff)
+        groups[key].append(name)
 
     # --- outputs ---
-    out_json = {aff: sorted(names) for aff, names in
-                sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0].lower()))}
+    out_json = {labels[key]: sorted(names) for key, names in
+                sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))}
     with open("attendees_by_affiliation.json", "w") as f:
         json.dump(out_json, f, indent=2, ensure_ascii=False)
     with open("attendees_by_affiliation.csv", "w", newline="") as f:

@@ -62,9 +62,12 @@ window.guessCountry = (function(){
     ["delhi","IN"],["mumbai","IN"],["bangalore","IN"],["bengaluru","IN"],
     ["gandhinagar","IN"],["chennai","IN"],["kanpur","IN"],["sikkim","IN"],
     ["taipei","TW"],["hsinchu","TW"],["taiwan","TW"],
-    ["singapore","SG"],["nanyang","SG"],
+    ["singapore","SG"],["nanyang","SG"],["a*star","SG"],
     ["sydney","AU"],["melbourne","AU"],["canberra","AU"],["brisbane","AU"],
     ["perth","AU"],["adelaide","AU"],["queensland","AU"],
+    ["brunel","GB"],["sorbonne","FR"],["onera","FR"],["mitsubishi","JP"],
+    ["hun-ren","HU"],["tor vergata","IT"],["southwestern institute of physics","CN"],
+    ["extreme light infrastructure eric","CZ"],
     // --- country names ---
     ["united kingdom","GB"],["u.k.","GB"],["england","GB"],["scotland","GB"],
     ["wales","GB"],["britain","GB"],["uk","GB"],

@@ -30,8 +30,13 @@
   .kpi .n{font-size:28px;font-weight:700}
   .kpi .l{color:var(--muted);font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
   .kpi .s{color:var(--accent2);font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .kpi.warn{border-color:#f59e0b}
-  .kpi.warn .n,.kpi.warn .s{color:#f59e0b}
+  .uncat{border:1px solid #f59e0b;border-radius:12px;padding:14px 18px;margin:18px 0;background:var(--panel);
+       background:color-mix(in srgb,#f59e0b 6%,var(--panel))}
+  .uncat:empty{display:none}
+  .uncat h2{margin:0;font-size:20px;font-weight:700;color:#f59e0b;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .uncat h2 span{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .uncat .names{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .uncat .names span{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:12px}
   .ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 18px}
   input[type=search]{flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);
        color:var(--txt);border-radius:9px;padding:10px 13px;font-size:14px}
@@ -150,6 +155,7 @@
     <div class="note">Your credentials go straight from this browser to EventsAir over HTTPS to fetch &amp; decrypt the attendee list. Nothing is stored or sent anywhere else.</div>
   </div>
   <div class="kpis" id="kpis"></div>
+  <div class="uncat" id="uncat"></div>
   <div class="map" id="map"></div>
   <div class="ctl">
     <input type="search" id="q" placeholder="Search affiliation or attendee name…">
@@ -193,7 +199,7 @@ function setData(DATA){
   realAff = ALL.filter(([a])=>a!==EMPTY);
   withAff = realAff.reduce((s,[,n])=>s+n.length,0);
   computeCounts();
-  renderKpis(); buildCountryFilter(); renderMap(); render();
+  renderKpis(); renderUncat(); buildCountryFilter(); renderMap(); render();
   document.getElementById('foot').textContent = `${total} attendees · ${realAff.length} affiliations`;
 }
 
@@ -207,16 +213,21 @@ function computeCounts(){
 }
 
 function renderKpis(){
-  const items = [
-    ['Attendees', total, '', ''],
-    ['Affiliations', realAff.length, '', ''],
-    ['With affiliation', total?Math.round(withAff/total*100)+'%':'—', total?withAff+' of '+total:'', ''],
-    ['Largest', realAff[0]?realAff[0][1].length:0, realAff[0]?realAff[0][0]:'', ''],
-  ];
-  const noCtry = realAff.filter(([a])=>!affIso(a));   // affiliations with no recognised country
-  if(noCtry.length) items.push(['Uncategorised', noCtry.length, noCtry.map(([a])=>a).join(', '), ' warn']);
-  document.getElementById('kpis').innerHTML = items.map(([l,n,s,cls])=>
-    `<div class="kpi${cls}"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
+  document.getElementById('kpis').innerHTML = [
+    ['Attendees', total, ''],
+    ['Affiliations', realAff.length, ''],
+    ['With affiliation', total?Math.round(withAff/total*100)+'%':'—', total?withAff+' of '+total:''],
+    ['Largest', realAff[0]?realAff[0][1].length:0, realAff[0]?realAff[0][0]:''],
+  ].map(([l,n,s])=>`<div class="kpi"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
+}
+
+function renderUncat(){
+  const el = document.getElementById('uncat');
+  const no = realAff.filter(([a])=>!affIso(a));   // affiliations with no recognised country
+  if(!no.length){ el.innerHTML=''; return; }
+  el.innerHTML =
+    `<h2>${no.length} uncategorised affiliation${no.length!=1?'s':''}<span>no country recognised — add to affiliation_country.json</span></h2>`+
+    `<div class="names">`+no.map(([a,names])=>`<span>${esc(a)} (${names.length})</span>`).join('')+`</div>`;
 }
 
 const isoFlag = iso => iso.replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt(0)));

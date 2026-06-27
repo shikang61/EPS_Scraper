@@ -68,6 +68,7 @@ window.guessCountry = (function(){
     ["brunel","GB"],["sorbonne","FR"],["onera","FR"],["mitsubishi","JP"],
     ["hun-ren","HU"],["tor vergata","IT"],["southwestern institute of physics","CN"],
     ["extreme light infrastructure eric","CZ"],
+    ["institute of physics","CN"],["institute of space and plasma sciences","TW"],
     // --- country names ---
     ["united kingdom","GB"],["u.k.","GB"],["england","GB"],["scotland","GB"],
     ["wales","GB"],["britain","GB"],["uk","GB"],

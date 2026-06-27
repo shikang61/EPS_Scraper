@@ -30,6 +30,8 @@
   .kpi .n{font-size:28px;font-weight:700}
   .kpi .l{color:var(--muted);font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
   .kpi .s{color:var(--accent2);font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi.warn{border-color:#f59e0b}
+  .kpi.warn .n,.kpi.warn .s{color:#f59e0b}
   .ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 18px}
   input[type=search]{flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);
        color:var(--txt);border-radius:9px;padding:10px 13px;font-size:14px}
@@ -205,12 +207,16 @@ function computeCounts(){
 }
 
 function renderKpis(){
-  document.getElementById('kpis').innerHTML = [
-    ['Attendees', total, ''],
-    ['Affiliations', realAff.length, ''],
-    ['With affiliation', total?Math.round(withAff/total*100)+'%':'—', total?withAff+' of '+total:''],
-    ['Largest', realAff[0]?realAff[0][1].length:0, realAff[0]?realAff[0][0]:''],
-  ].map(([l,n,s])=>`<div class="kpi"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
+  const items = [
+    ['Attendees', total, '', ''],
+    ['Affiliations', realAff.length, '', ''],
+    ['With affiliation', total?Math.round(withAff/total*100)+'%':'—', total?withAff+' of '+total:'', ''],
+    ['Largest', realAff[0]?realAff[0][1].length:0, realAff[0]?realAff[0][0]:'', ''],
+  ];
+  const noCtry = realAff.filter(([a])=>!affIso(a));   // affiliations with no recognised country
+  if(noCtry.length) items.push(['Uncategorised', noCtry.length, noCtry.map(([a])=>a).join(', '), ' warn']);
+  document.getElementById('kpis').innerHTML = items.map(([l,n,s,cls])=>
+    `<div class="kpi${cls}"><div class="n">${esc(n)}</div><div class="l">${l}</div><div class="s" title="${esc(s)}">${esc(s)}</div></div>`).join('');
 }
 
 const isoFlag = iso => iso.replace(/[A-Z]/g,c=>String.fromCodePoint(127397+c.charCodeAt(0)));

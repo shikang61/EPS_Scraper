@@ -99,6 +99,11 @@
        background:color-mix(in srgb, var(--c) 13%, var(--panel))}
   .col .sec{color:var(--c)}
   .col .sec span{color:var(--c);border-color:var(--c);background:transparent;opacity:1}
+  .rgn{display:flex;align-items:center;gap:8px;margin:14px 2px 2px;font-size:10px;font-weight:700;
+       text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .rgn:first-child{margin-top:2px}
+  .rgn span{font-weight:600;opacity:.7}
+  .rgn::after{content:"";flex:1;height:1px;background:var(--line)}
   @media(max-width:1100px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:600px){.cols{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
@@ -185,6 +190,11 @@ const FIRSTNAME_FIELDS=["FirstName","GivenName","Firstname"];
 const LASTNAME_FIELDS=["LastName","Surname","Lastname","FamilyName"];
 const EMPTY="(no affiliation)";
 const IGNORE_AFF = new Set(["interdisciplinary graduate"]);  // not real affiliations (normKey'd)
+const REGION = {US:'na',CA:'na', GB:'eu',FR:'eu',DE:'eu',CH:'eu',ES:'eu',IT:'eu',SE:'eu',CZ:'eu',FI:'eu',
+  PT:'eu',BE:'eu',AT:'eu',PL:'eu',NL:'eu',RO:'eu',UA:'eu',GR:'eu',SI:'eu',HU:'eu',NO:'eu',
+  JP:'as',KR:'as',CN:'as',IN:'as',SG:'as',TW:'as', AU:'oc', IL:'me'};
+const REGION_LABELS = {eu:'Europe',as:'Asia',na:'North America',me:'Middle East',oc:'Oceania',af:'Africa',other:'Other'};
+const REGION_ORDER = ['eu','as','na','me','oc','af','other'];
 
 const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const hl = (s,q)=> q ? esc(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>') : esc(s);
@@ -389,9 +399,17 @@ function render(){
   const groups = {}; order.forEach(t=>groups[t]=[]);
   rows.forEach(r=>{ (groups[typeOf(r[0])] || groups.other).push(r); });
   const tl = window.TYPE_LABELS || {};
+  const regionOf = a => REGION[affIso(a)] || 'other';
+  const colInner = list=>{
+    const byR = {}; list.forEach(r=>{ const rg=regionOf(r[0]); (byR[rg] ||= []).push(r); });
+    return Object.keys(byR)
+      .sort((a,b)=>byR[b].length-byR[a].length || REGION_ORDER.indexOf(a)-REGION_ORDER.indexOf(b))
+      .map(rg=>`<div class="rgn">${esc(REGION_LABELS[rg]||rg)}<span>${byR[rg].length}</span></div>`+
+              byR[rg].map(cardHTML).join('')).join('');
+  };
   el.innerHTML = `<div class="cols">`+ order.filter(t=>groups[t].length).map(t=>
     `<section class="col col-${t}"><h2 class="sec">${esc(tl[t]||t)} <span>${groups[t].length}</span></h2>`+
-    `<div class="colcards">${groups[t].map(cardHTML).join('')}</div></section>`
+    `<div class="colcards">${colInner(groups[t])}</div></section>`
   ).join('') +`</div>`;
   el.querySelectorAll('.card .head').forEach(h=>h.onclick=()=>{
     if(window.getSelection && String(window.getSelection())) return;  // don't toggle while selecting/copying text

@@ -162,7 +162,7 @@
       <button type="submit" id="pullBtn">Pull attendee data</button>
       <span class="status" id="status"></span>
     </form>
-    <div class="note">Your credentials go straight from this browser to EventsAir over HTTPS to fetch &amp; decrypt the attendee list. Nothing is stored or sent anywhere else.</div>
+    <div class="note">Your credentials go straight from this browser to EventsAir over HTTPS to fetch &amp; decrypt the attendee list. They're kept only in this browser for convenience (email saved locally; password for this tab) — never sent anywhere else.</div>
   </div>
   <div class="kpis" id="kpis"></div>
   <div class="uncat" id="uncat"></div>
@@ -517,8 +517,17 @@ document.getElementById('pullForm').addEventListener('submit', async e=>{
   btn.disabled = true;
   try { await pull(email, password); }
   catch(err){ setStatus('Error: '+err.message, 'err'); }
-  finally { btn.disabled = false; document.getElementById('password').value=''; }
+  finally { btn.disabled = false; }
 });
+
+// persist credentials in this browser (email -> localStorage; password -> sessionStorage, cleared on tab close)
+(function(){
+  const em=document.getElementById('email'), pw=document.getElementById('password');
+  if(localStorage.getItem('eps_email')) em.value = localStorage.getItem('eps_email');
+  if(sessionStorage.getItem('eps_pw')) pw.value = sessionStorage.getItem('eps_pw');
+  em.addEventListener('input', ()=>localStorage.setItem('eps_email', em.value));
+  pw.addEventListener('input', ()=>sessionStorage.setItem('eps_pw', pw.value));
+})();
 
 document.getElementById('q').oninput=render;
 document.getElementById('country').onchange=render;

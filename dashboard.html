@@ -132,6 +132,30 @@
   .people li{list-style:none;padding:4px 0;color:var(--txt);font-size:13px;break-inside:avoid}
   mark{background:#2f7d52;color:#fff;border-radius:3px;padding:0 2px}
   .empty{color:var(--muted);padding:30px;text-align:center;grid-column:1/-1}
+  /* insights strip */
+  .insights{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+  .insights:empty{display:none}
+  .iblock{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+  .iblock h3{margin:0 0 9px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .ibar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel2)}
+  .ibar span{display:block;height:100%}
+  .ilegend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:9px;font-size:11px;color:var(--muted)}
+  .ilegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .itop{display:flex;flex-wrap:wrap;gap:7px 14px;font-size:12px}
+  .itop b{color:var(--accent2)}
+  /* attendee search panel */
+  .psearch:empty{display:none}
+  .psearch{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 16px}
+  .psh{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
+  .plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 14px}
+  .pitem{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;min-width:0}
+  .pitem .pf{flex:none;width:20px;text-align:center}
+  .pitem .pn{font-weight:600;white-space:nowrap;flex:none}
+  .pitem .pa{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pmore{margin-top:8px;font-size:12px;color:var(--muted)}
+  .ctl .mini{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer}
+  .ctl .mini:hover{border-color:var(--accent)}
+  @media(max-width:760px){.insights{grid-template-columns:1fr}}
   footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){
@@ -167,12 +191,16 @@
   <div class="kpis" id="kpis"></div>
   <div class="uncat" id="uncat"></div>
   <div class="map" id="map"></div>
+  <div class="insights" id="insights"></div>
   <div class="ctl">
     <input type="search" id="q" placeholder="Search affiliation or attendee name…">
     <select id="country"><option value="">All countries</option></select>
     <label class="chk"><input type="checkbox" id="hideEmpty" checked> hide “no affiliation”</label>
     <label class="chk"><input type="checkbox" id="expandAll"> expand all</label>
+    <button type="button" id="expCsv" class="mini" title="Download current view as CSV">⬇ CSV</button>
+    <button type="button" id="expJson" class="mini" title="Download current view as JSON">⬇ JSON</button>
   </div>
+  <div class="psearch" id="psearch"></div>
   <div id="cards"></div>
 </div>
 
@@ -200,6 +228,8 @@ const REGION = {US:'na',CA:'na', GB:'eu',FR:'eu',DE:'eu',CH:'eu',ES:'eu',IT:'eu'
   JP:'as',KR:'as',CN:'as',IN:'as',SG:'as',TW:'as', AU:'oc', IL:'me'};
 const REGION_LABELS = {eu:'Europe',as:'Asia',na:'North America',me:'Middle East',oc:'Oceania',af:'Africa',other:'Other'};
 const REGION_ORDER = ['eu','as','na','me','oc','af','other'];
+const REGION_COLORS = {eu:'#4f9dff',as:'#f59e0b',na:'#34d399',me:'#a78bfa',oc:'#f472b6',af:'#f87171',other:'#8b9ab5'};
+const TYPE_COLORS = {uni:'#4f9dff',inst:'#34d399',company:'#f97316',org:'#a78bfa',other:'#8b9ab5'};
 
 const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const hl = (s,q)=> q ? esc(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>') : esc(s);
@@ -214,7 +244,7 @@ function setData(DATA){
   realAff = ALL.filter(([a])=>a!==EMPTY);
   withAff = realAff.reduce((s,[,n])=>s+n.length,0);
   computeCounts();
-  renderKpis(); renderUncat(); buildCountryFilter(); renderMap(); render();
+  renderKpis(); renderUncat(); renderInsights(); buildCountryFilter(); renderMap(); render();
   document.getElementById('foot').textContent = `${total} attendees · ${realAff.length} affiliations`;
 }
 
@@ -367,14 +397,10 @@ function applyMapSelection(){
   document.querySelectorAll('#mapg .cc,#mapg .cm').forEach(s=>s.classList.toggle('sel', s.dataset.iso===v));
 }
 
-function render(){
-  const el = document.getElementById('cards');
-  if(!ALL.length){ el.innerHTML='<div class="empty">Sign in above and press “Pull attendee data” to load the list.</div>'; return; }
+function filteredRows(){
   const q = document.getElementById('q').value.trim().toLowerCase();
   const hide = document.getElementById('hideEmpty').checked;
-  const expandAll = document.getElementById('expandAll').checked;
   const country = document.getElementById('country').value;
-  applyMapSelection();
   let rows = hide ? ALL.filter(([a])=>a!==EMPTY) : ALL;
   if(country) rows = rows.filter(([a])=> country==='__none__' ? !affIso(a) : affIso(a)===country);
   if(q){
@@ -384,6 +410,80 @@ function render(){
       return nm.length ? [a,nm] : null;
     }).filter(Boolean);
   }
+  return {rows, q};
+}
+
+function renderPeople(q){
+  const el = document.getElementById('psearch');
+  if(!q){ el.innerHTML=''; return; }
+  const hits = [];
+  for(const [a,names] of ALL){
+    for(const n of names) if(n.toLowerCase().includes(q)) hits.push([n,a]);
+    if(hits.length>400) break;
+  }
+  if(!hits.length){ el.innerHTML=''; return; }
+  hits.sort((x,y)=>x[0].localeCompare(y[0]));
+  const cap = 60, shown = hits.slice(0, cap);
+  el.innerHTML =
+    `<div class="psh">${hits.length} ${hits.length===1?'person':'people'} matching “${esc(q)}”</div>`+
+    `<div class="plist">`+shown.map(([n,a])=>{
+      const iso = affIso(a);
+      return `<div class="pitem"><span class="pf" title="${esc(iso?((window.COUNTRY_NAMES||{})[iso]||iso):'')}">${iso?isoFlag(iso):''}</span>`+
+             `<span class="pn">${hl(n,q)}</span><span class="pa">${esc(a)}</span></div>`;
+    }).join('')+`</div>`+
+    (hits.length>cap?`<div class="pmore">+${hits.length-cap} more — refine search</div>`:'');
+}
+
+function renderInsights(){
+  const el = document.getElementById('insights');
+  if(!realAff.length){ el.innerHTML=''; return; }
+  const reg = {}, typ = {}; let tot = 0;
+  for(const [a,names] of realAff){
+    const r = REGION[affIso(a)]||'other'; reg[r] = (reg[r]||0)+names.length;
+    const t = (window.affType?window.affType(a):'other'); typ[t] = (typ[t]||0)+names.length;
+    tot += names.length;
+  }
+  const regSeg = REGION_ORDER.filter(r=>reg[r]).map(r=>({label:REGION_LABELS[r],n:reg[r],c:REGION_COLORS[r]}));
+  const typSeg = (window.TYPE_ORDER||[]).filter(t=>typ[t]).map(t=>({label:(window.TYPE_LABELS||{})[t]||t,n:typ[t],c:TYPE_COLORS[t]}));
+  const topC = Object.entries(ISOCOUNT).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const bar = segs=>`<div class="ibar">`+segs.map(s=>`<span style="width:${(s.n/tot*100).toFixed(1)}%;background:${s.c}" title="${esc(s.label)}: ${s.n}"></span>`).join('')+`</div>`;
+  const leg = segs=>`<div class="ilegend">`+segs.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.label)} ${Math.round(s.n/tot*100)}%</span>`).join('')+`</div>`;
+  el.innerHTML =
+    `<div class="iblock"><h3>By region</h3>${bar(regSeg)}${leg(regSeg)}</div>`+
+    `<div class="iblock"><h3>By type</h3>${bar(typSeg)}${leg(typSeg)}</div>`+
+    `<div class="iblock"><h3>Top countries</h3><div class="itop">`+
+      topC.map(([iso,n])=>`<span>${isoFlag(iso)} ${esc((window.COUNTRY_NAMES||{})[iso]||iso)} <b>${n}</b></span>`).join('')+`</div></div>`;
+}
+
+function exportRows(fmt){
+  const {rows} = filteredRows();
+  const data = [];
+  for(const [a,names] of rows){
+    const iso = affIso(a) || '';
+    const country = (window.COUNTRY_NAMES||{})[iso] || '';
+    const type = (window.TYPE_LABELS||{})[window.affType?window.affType(a):'other'] || '';
+    const region = REGION_LABELS[REGION[iso]||'other'] || '';
+    for(const n of names) data.push({name:n, affiliation:a, country, type, region});
+  }
+  let blob, fname;
+  if(fmt==='json'){ blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); fname='eps_attendees.json'; }
+  else{
+    const cq = v=>`"${String(v).replace(/"/g,'""')}"`;
+    const lines = [['Name','Affiliation','Country','Type','Region'].join(',')]
+      .concat(data.map(d=>[d.name,d.affiliation,d.country,d.type,d.region].map(cq).join(',')));
+    blob = new Blob([lines.join('\n')],{type:'text/csv'}); fname='eps_attendees.csv';
+  }
+  const url = URL.createObjectURL(blob), aEl = document.createElement('a');
+  aEl.href = url; aEl.download = fname; aEl.click(); URL.revokeObjectURL(url);
+}
+
+function render(){
+  const el = document.getElementById('cards');
+  if(!ALL.length){ el.innerHTML='<div class="empty">Sign in above and press “Pull attendee data” to load the list.</div>'; renderPeople(''); return; }
+  const expandAll = document.getElementById('expandAll').checked;
+  applyMapSelection();
+  const {rows, q} = filteredRows();
+  renderPeople(q);
   if(!rows.length){ el.innerHTML='<div class="empty">No matches.</div>'; return; }
   const openState = (q || expandAll);
   const cardHTML = ([a,names],i)=>{
@@ -531,6 +631,8 @@ document.getElementById('pullForm').addEventListener('submit', async e=>{
 
 document.getElementById('q').oninput=render;
 document.getElementById('country').onchange=render;
+document.getElementById('expCsv').onclick=()=>exportRows('csv');
+document.getElementById('expJson').onclick=()=>exportRows('json');
 document.getElementById('hideEmpty').onchange=render;
 document.getElementById('expandAll').onchange=render;
 

@@ -4,4 +4,5 @@ dashboard_data.js
 attendees_by_affiliation.csv
 attendees_by_affiliation.json
 _sample_record.json
+agenda_raw.json
 .vercel/

@@ -156,6 +156,56 @@
   .ctl .mini{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer}
   .ctl .mini:hover{border-color:var(--accent)}
   @media(max-width:760px){.insights{grid-template-columns:1fr}}
+  /* view tabs */
+  .tabs{display:flex;gap:8px;margin-top:14px}
+  .tab{background:var(--panel2);color:var(--muted);border:1px solid var(--line);border-radius:9px;
+       padding:8px 16px;font-size:14px;font-weight:650;cursor:pointer}
+  .tab:hover{border-color:var(--accent);color:var(--txt)}
+  .tab.on{background:var(--accent);color:#06122a;border-color:var(--accent)}
+  :root[data-theme="light"] .tab.on{background:#f97316;color:#fff;border-color:#f97316}
+
+  /* agenda view */
+  .days{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+  .day{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:10px;
+       padding:8px 14px;font-size:14px;font-weight:650;cursor:pointer;text-align:center;line-height:1.25}
+  .day .dn{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .day:hover{border-color:var(--accent)}
+  .day.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--panel))}
+  .day .dc{color:var(--accent2);font-weight:700;font-size:12px}
+  select#astream{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+       border-radius:9px;padding:10px 13px;font-size:14px;cursor:pointer;max-width:260px}
+  .acount{color:var(--muted);font-size:13px;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .slot{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;
+       margin:18px 2px 8px;font-variant-numeric:tabular-nums}
+  .ses{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);
+       border-radius:12px;padding:11px 14px;margin-bottom:8px;transition:border-color .15s;cursor:pointer}
+  .ses:hover{border-color:var(--accent)}
+  .ses.sel{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 8%,var(--panel))}
+  .ses.sel:hover{border-color:var(--accent2)}
+  .tick{flex:none;width:22px;height:22px;margin-top:1px;border:2px solid var(--line);border-radius:6px;
+       display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;
+       line-height:1;cursor:pointer;transition:background .12s,border-color .12s}
+  .tick.on{background:var(--accent2);border-color:var(--accent2)}
+  .ses:hover .tick{border-color:var(--accent2)}
+  .ses .time{flex:none;width:64px;font-size:13px;font-variant-numeric:tabular-nums;font-weight:650}
+  .ses .time small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+  .sbody{flex:1;min-width:0}
+  .sname{font-weight:650;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+  .sname .sdc{color:var(--muted);font-size:11px;transition:transform .15s;display:inline-block;
+       cursor:pointer;padding:2px 6px;margin:-2px -2px;border-radius:6px}
+  .sname .sdc:hover{background:var(--panel2);color:var(--txt)}
+  .ses.open .sname .sdc{transform:rotate(180deg)}
+  .smeta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:5px;font-size:12px;color:var(--muted);align-items:center}
+  .strack{font-weight:700;font-size:11px;border-radius:20px;padding:1px 9px;border:1px solid var(--line);color:var(--txt)}
+  .sdetails{margin-top:9px;font-size:13px;color:var(--txt);white-space:pre-wrap;line-height:1.5;
+       border-top:1px solid var(--line);padding-top:9px;display:none;cursor:auto}
+  .ses.open .sdetails{display:block}
+  .aempty{color:var(--muted);padding:30px;text-align:center}
+  @media(max-width:600px){
+    .ses{padding:10px 12px;gap:9px}
+    select#astream{max-width:none;flex:1 1 100%}
+    .acount{margin-left:0}
+  }
   footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){
@@ -173,12 +223,16 @@
 </head>
 <body>
 <header>
-  <h1>EPS Edinburgh 2026 — Attendees by Affiliation</h1>
-  <div class="sub">48th EPS Conference on Plasma Physics · cards sorted by attendee count — click to expand</div>
+  <h1>EPS Edinburgh 2026</h1>
+  <div class="sub">48th EPS Conference on Plasma Physics · 28 June – 3 July</div>
+  <nav class="tabs">
+    <button class="tab on" id="tabAtt" type="button">Attendees</button>
+    <button class="tab" id="tabAg" type="button">Agenda</button>
+  </nav>
   <button id="theme" class="themebtn" title="Toggle light / dark" aria-label="Toggle theme"></button>
 </header>
 
-<div class="wrap">
+<div class="wrap" id="view-attendees">
   <div class="pull">
     <form class="pullrow" id="pullForm" autocomplete="on">
       <input type="email" id="email" placeholder="EventsAir email" autocomplete="username" required>
@@ -204,6 +258,20 @@
   <div id="cards"></div>
 </div>
 
+<div class="wrap" id="view-agenda" hidden>
+  <div class="days" id="adays"></div>
+  <div class="ctl">
+    <input type="search" id="aq" placeholder="Search session, track or room…">
+    <select id="astream"><option value="">All streams</option></select>
+    <label class="chk"><input type="checkbox" id="aselonly"> selected only</label>
+    <span class="acount" id="acount"></span>
+    <button type="button" id="aexport" class="mini" title="Download selected sessions as a calendar file">⬇ Export .ics</button>
+    <button type="button" id="aclear" class="mini" title="Clear selected sessions">Clear</button>
+  </div>
+  <div id="agenda"></div>
+  <div class="note" style="max-width:1280px;margin:14px auto 0;padding:0 0">Tap a session card to tick it onto your agenda; tap the ▾ to read its abstract. Overlapping sessions are mutually exclusive — picking one clears any that clash with it. Selections are saved in this browser. <b>Export .ics</b> downloads them as a calendar file you can open in Apple Calendar, Google Calendar or Outlook.</div>
+</div>
+
 <footer id="foot"></footer>
 <div class="maptip" id="maptip"></div>
 
@@ -212,6 +280,7 @@
 <script src="country_guess.js"></script>
 <script src="affil_type.js"></script>
 <script src="world_map.js"></script>
+<script src="agenda_data.js"></script>
 <script>
 // ---- event constants (mirror eps_scraper.py) ----
 const APP_ID="114ab0d14ad54df48df8b61dfeca42ca", EVENT_SLUG="eps-edinburgh", SLUG="edinburgh2026";
@@ -647,6 +716,133 @@ else { renderKpis(); renderMap(); render(); }
   const set = t=>{ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); btn.textContent = t==='light'?'🌙':'☀️'; };
   set(localStorage.getItem('theme') || 'light');
   btn.onclick = ()=>set(root.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+})();
+
+// ================= AGENDA (select sessions -> .ics) =================
+(function(){
+  const AG = window.AGENDA || [];
+  const dayLabels = new Map(AG.map(i=>[i.date, i.dayLabel]));
+  const dayList = [...dayLabels.keys()];
+  let curDay = dayList.find(d=>AG.some(i=>i.date===d && i.type==='Session')) || dayList[0];
+  let asel = new Set(JSON.parse(localStorage.getItem('eps_agenda_sel')||'[]'));
+  const saveSel = ()=>localStorage.setItem('eps_agenda_sel', JSON.stringify([...asel]));
+  const byId = new Map(AG.map(i=>[i.id, i]));
+  // two sessions clash if their times overlap (UTC ISO strings share one format)
+  const overlaps = (a,b)=> a.start < b.end && b.start < a.end;
+
+  const streamOf = it => { const m = it.track && it.track.match(/^[A-Za-z]+/); return m ? m[0].toUpperCase() : (it.type||'Other'); };
+  const fmtT = h => h && h.length===4 ? h.slice(0,2)+':'+h.slice(2) : (h||'');
+  const shortDay = lbl => { const m = lbl.match(/^(\w+),\s*(\w+)\s+(\d+)/); return m ? {wd:m[1].slice(0,3), md:m[2].slice(0,3)+' '+m[3]} : {wd:'', md:lbl}; };
+
+  function buildStreamFilter(){
+    const sel = document.getElementById('astream');
+    const streams = [...new Set(AG.map(streamOf))].sort();
+    sel.innerHTML = '<option value="">All streams</option>'+streams.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  }
+  function updateCount(){ document.getElementById('acount').textContent = asel.size+(asel.size===1?' session':' sessions')+' selected'; }
+  function toggleSelect(id, row){
+    let clashed = false;
+    if(asel.has(id)){ asel.delete(id); }
+    else{
+      const it = byId.get(id);
+      for(const x of AG) if(x.id!==id && asel.has(x.id) && overlaps(x,it)){ asel.delete(x.id); clashed = true; }
+      asel.add(id);
+    }
+    saveSel();
+    if(clashed){ renderAgenda(); }   // a clashing card was cleared elsewhere — repaint the day
+    else{
+      const on = asel.has(id);
+      row.classList.toggle('sel', on);
+      const tk = row.querySelector('.tick'); tk.classList.toggle('on', on);
+      tk.setAttribute('aria-checked', on); tk.textContent = on?'✓':'';
+    }
+    updateCount(); renderDays();
+  }
+  function renderDays(){
+    const el = document.getElementById('adays');
+    el.innerHTML = dayList.map(d=>{
+      const sd = shortDay(dayLabels.get(d));
+      const nsel = AG.reduce((s,i)=>s+(i.date===d && asel.has(i.id)?1:0),0);
+      return `<button type="button" class="day${d===curDay?' on':''}" data-d="${d}"><span class="dn">${esc(sd.wd)}</span>${esc(sd.md)}${nsel?` <span class="dc">✓${nsel}</span>`:''}</button>`;
+    }).join('');
+    el.querySelectorAll('.day').forEach(b=>b.onclick=()=>{ curDay=b.dataset.d; renderDays(); renderAgenda(); });
+  }
+  function renderAgenda(){
+    const wrap = document.getElementById('agenda');
+    updateCount();
+    if(!AG.length){ wrap.innerHTML='<div class="aempty">Agenda data not loaded.</div>'; return; }
+    const q = document.getElementById('aq').value.trim().toLowerCase();
+    const stream = document.getElementById('astream').value;
+    const selOnly = document.getElementById('aselonly').checked;
+    let items = AG.filter(i=>i.date===curDay);
+    if(stream) items = items.filter(i=>streamOf(i)===stream);
+    if(selOnly) items = items.filter(i=>asel.has(i.id));
+    if(q) items = items.filter(i=>(i.name+' '+i.track+' '+i.loc).toLowerCase().includes(q));
+    if(!items.length){ wrap.innerHTML='<div class="aempty">No sessions match.</div>'; return; }
+    let h='', lastS=null;
+    for(const it of items){
+      if(it.s!==lastS){ h+=`<div class="slot">${fmtT(it.s)} – ${fmtT(it.e)}</div>`; lastS=it.s; }
+      const on = asel.has(it.id);
+      h+=`<div class="ses${on?' sel':''}" data-id="${it.id}">`+
+        `<div class="time">${fmtT(it.s)}<small>${fmtT(it.e)}</small></div>`+
+        `<div class="sbody">`+
+          `<div class="sname">${esc(it.name)}${it.details?' <span class="sdc">▾</span>':''}</div>`+
+          `<div class="smeta"><span class="strack">${esc(it.track||it.type)}</span>${it.loc?`<span>📍 ${esc(it.loc)}</span>`:''}</div>`+
+          (it.details?`<div class="sdetails">${esc(it.details)}</div>`:'')+
+        `</div>`+
+        `<span class="tick${on?' on':''}" role="checkbox" aria-checked="${on}" title="Add to my agenda">${on?'✓':''}</span>`+
+      `</div>`;
+    }
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('.ses').forEach(row=>{
+      row.onclick = e=>{
+        if(e.target.closest('.sdc')){ row.classList.toggle('open'); return; }  // chevron -> expand abstract
+        if(e.target.closest('.sdetails')) return;                              // reading the abstract
+        if(window.getSelection && String(window.getSelection())) return;       // copying text
+        toggleSelect(row.dataset.id, row);
+      };
+    });
+  }
+
+  // ---- ICS export ----
+  const icsEsc = s => String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+  const icsDate = iso => new Date(iso).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const fold = l => { let o=''; while(l.length>73){ o+=l.slice(0,73)+'\r\n '; l=l.slice(73);} return o+l; };
+  function exportIcs(){
+    const items = AG.filter(i=>asel.has(i.id)).sort((a,b)=>(a.start<b.start?-1:a.start>b.start?1:0));
+    if(!items.length){ alert('No sessions selected. Tap ☆ on a session to add it to your agenda.'); return; }
+    const stamp = icsDate(new Date().toISOString());
+    const out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EPS Edinburgh 2026//Agenda//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:EPS Edinburgh 2026'];
+    for(const it of items){
+      const desc = [it.track, it.details].filter(Boolean).join('\n\n');
+      out.push('BEGIN:VEVENT','UID:'+it.id+'@eps-edinburgh-2026','DTSTAMP:'+stamp,
+        'DTSTART:'+icsDate(it.start),'DTEND:'+icsDate(it.end), fold('SUMMARY:'+icsEsc(it.name)));
+      if(it.loc) out.push(fold('LOCATION:'+icsEsc(it.loc)));
+      if(desc)   out.push(fold('DESCRIPTION:'+icsEsc(desc)));
+      out.push('END:VEVENT');
+    }
+    out.push('END:VCALENDAR');
+    const blob = new Blob([out.join('\r\n')],{type:'text/calendar'});
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = 'eps_edinburgh_2026.ics'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  if(AG.length){ buildStreamFilter(); renderDays(); renderAgenda(); }
+  document.getElementById('aq').oninput = renderAgenda;
+  document.getElementById('astream').onchange = renderAgenda;
+  document.getElementById('aselonly').onchange = renderAgenda;
+  document.getElementById('aexport').onclick = exportIcs;
+  document.getElementById('aclear').onclick = ()=>{ if(asel.size && confirm('Clear all '+asel.size+' selected session'+(asel.size===1?'':'s')+'?')){ asel.clear(); saveSel(); renderDays(); renderAgenda(); } };
+})();
+
+// ================= view tabs =================
+(function(){
+  const att=document.getElementById('view-attendees'), ag=document.getElementById('view-agenda');
+  const ta=document.getElementById('tabAtt'), tg=document.getElementById('tabAg');
+  const show = v=>{ const isAg=v==='agenda'; att.hidden=isAg; ag.hidden=!isAg;
+    ta.classList.toggle('on',!isAg); tg.classList.toggle('on',isAg); localStorage.setItem('eps_view',v); };
+  ta.onclick=()=>show('attendees'); tg.onclick=()=>show('agenda');
+  show(localStorage.getItem('eps_view')||'attendees');
 })();
 </script>
 </body>

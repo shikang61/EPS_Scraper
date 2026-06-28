@@ -9,3 +9,6 @@ attendees_by_affiliation.json
 _sample_record.json
 build_countries.py
 affiliation_country.json
+probe_agenda.py
+build_agenda.py
+agenda_raw.json

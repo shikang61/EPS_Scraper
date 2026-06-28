@@ -23,6 +23,10 @@ window.affType = (function(){
     "indian institute of science":"uni","royal military academy belgium":"uni",
     "a*star":"inst","onera":"inst","extreme light infrastructure eric":"inst",
     "feat, a*star":"inst","institute of space and plasma sciences":"uni","tor vergata":"uni",
+    "cnr":"inst","awe":"inst",
+    "cosylab":"company","eni":"company","general fusion":"company",
+    "nature portfolio":"company","am space":"company",
+    "dtt scarl":"org","comisión chilena de energía nuclear":"org",
   };
 
   // checked in order, first match wins

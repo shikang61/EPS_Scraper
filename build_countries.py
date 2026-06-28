@@ -46,6 +46,7 @@ COUNTRIES = {
     "IL": (31.4, 35.0, "Israel"),       "GR": (39.1, 22.0, "Greece"),
     "SI": (46.1, 14.9, "Slovenia"),     "HU": (47.2, 19.4, "Hungary"),
     "NO": (64.5, 11.5, "Norway"),    "AU": (-25.0, 134.0, "Australia"),
+    "CL": (-35.7, -71.4, "Chile"),   "BR": (-10.8, -52.9, "Brazil"),
 }
 COUNTRY_NAMES = {iso: name for iso, (_, _, name) in COUNTRIES.items()}
 

@@ -225,10 +225,10 @@ const EMPTY="(no affiliation)";
 const IGNORE_AFF = new Set(["interdisciplinary graduate"]);  // not real affiliations (normKey'd)
 const REGION = {US:'na',CA:'na', GB:'eu',FR:'eu',DE:'eu',CH:'eu',ES:'eu',IT:'eu',SE:'eu',CZ:'eu',FI:'eu',
   PT:'eu',BE:'eu',AT:'eu',PL:'eu',NL:'eu',RO:'eu',UA:'eu',GR:'eu',SI:'eu',HU:'eu',NO:'eu',
-  JP:'as',KR:'as',CN:'as',IN:'as',SG:'as',TW:'as', AU:'oc', IL:'me'};
-const REGION_LABELS = {eu:'Europe',as:'Asia',na:'North America',me:'Middle East',oc:'Oceania',af:'Africa',other:'Other'};
-const REGION_ORDER = ['eu','as','na','me','oc','af','other'];
-const REGION_COLORS = {eu:'#4f9dff',as:'#f59e0b',na:'#34d399',me:'#a78bfa',oc:'#f472b6',af:'#f87171',other:'#8b9ab5'};
+  JP:'as',KR:'as',CN:'as',IN:'as',SG:'as',TW:'as', AU:'oc', IL:'me', CL:'sa',BR:'sa'};
+const REGION_LABELS = {eu:'Europe',as:'Asia',na:'North America',sa:'South America',me:'Middle East',oc:'Oceania',af:'Africa',other:'Other'};
+const REGION_ORDER = ['eu','as','na','sa','me','oc','af','other'];
+const REGION_COLORS = {eu:'#4f9dff',as:'#f59e0b',na:'#34d399',sa:'#22d3ee',me:'#a78bfa',oc:'#f472b6',af:'#f87171',other:'#8b9ab5'};
 const TYPE_COLORS = {uni:'#4f9dff',inst:'#34d399',company:'#f97316',org:'#a78bfa',other:'#8b9ab5'};
 
 const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));

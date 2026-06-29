@@ -52,6 +52,7 @@ def main():
     for g in posters:
         name = f"{(g.get('FirstName') or '').strip()} {(g.get('LastName') or '').strip()}".strip()
         out.append({
+            "id":  g.get("Id") or "",
             "t":   (g.get("DisplayName") or "").strip(),
             "a":   name,
             "o":   (g.get("Organization") or "").strip(),

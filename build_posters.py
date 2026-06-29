@@ -16,6 +16,40 @@ import html
 import json
 import re
 import sys
+import unicodedata
+from collections import Counter
+
+# Affiliations that appear under several spellings -> one canonical name. Pure
+# case/punctuation variants are merged automatically (see norm_org); this map is
+# only for genuinely different strings for the same institute.
+ORG_ALIASES = {
+    "epfl, swiss plasma center": "EPFL",
+    "university of padova": "University of Padua",
+    "laboratoire de physique des plasma": "Laboratoire de Physique des Plasmas",
+    "university of griefswald": "University of Greifswald",
+    "tokamak energy ltd": "Tokamak Energy",
+    "tokamak energy ltd.": "Tokamak Energy",
+}
+
+
+def norm_org(s):
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = re.sub(r"[.,;:]", " ", s).lower()
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def canonicalise_orgs(rows):
+    """Set each poster's affiliation to one canonical spelling so institutes group
+    cleanly: apply ORG_ALIASES, then collapse case/punctuation variants to the
+    most common spelling in the data."""
+    based = [ORG_ALIASES.get((p["o"] or "").strip().lower(), p["o"]) for p in rows]
+    groups = {}
+    for o in based:
+        groups.setdefault(norm_org(o), Counter())[o] += 1
+    canon = {k: c.most_common(1)[0][0] for k, c in groups.items()}
+    for p, b in zip(rows, based):
+        p["o"] = canon[norm_org(b)]
 
 RAW = "posters_raw.json"
 AGENDA_RAW = "agenda_raw.json"
@@ -60,6 +94,8 @@ def main():
             "sid": g.get("SessionId") or "",
             "pdf": g.get("DocumentUri") or "",
         })
+    canonicalise_orgs(out)
+
     # stable order: theme, then author surname
     out.sort(key=lambda p: (p["th"], p["a"].rsplit(" ", 1)[-1].lower(), p["t"].lower()))
 

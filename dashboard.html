@@ -251,12 +251,23 @@
   .psession>h3{margin:0;font-size:17px;font-weight:700;line-height:1.25}
   .psession .pmeta{display:flex;flex-wrap:wrap;gap:5px 14px;color:var(--muted);font-size:13px;
        margin-top:5px;align-items:center;font-variant-numeric:tabular-nums}
-  .ptheme{margin-top:26px}
+  .ptheme{margin-top:10px}
   .ptheme .sh{display:flex;align-items:baseline;gap:10px;font-size:15.5px;font-weight:800;color:var(--c);
-       letter-spacing:.02em;margin-bottom:13px}
+       letter-spacing:.02em;cursor:pointer;padding:10px 13px;border:1px solid var(--line);border-radius:10px;
+       background:var(--panel);transition:border-color .12s,background .12s}
+  .ptheme .sh:hover{border-color:var(--c)}
+  .ptheme.open .sh{border-color:var(--c);background:color-mix(in srgb,var(--c) 8%,var(--panel))}
+  .ptheme .sh .ca{color:var(--c);font-size:11px;align-self:center;transition:transform .15s}
+  .ptheme.open .sh .ca{transform:rotate(90deg)}
   .ptheme .sh .code{font-variant-numeric:tabular-nums}
   .ptheme .sh .td{color:var(--txt);font-weight:700;text-transform:none;letter-spacing:0}
   .ptheme .sh .tn{color:var(--muted);font-weight:600;font-size:12.5px;margin-left:auto}
+  .ptheme .sh .star{flex:none;margin-left:9px;border:0;background:none;cursor:pointer;font-size:17px;
+       line-height:1;color:var(--muted);padding:0 2px;transition:color .12s,transform .12s}
+  .ptheme .sh .star:hover{transform:scale(1.18)}
+  .ptheme .sh .star.on{color:#f5b301}
+  .ptheme:not(.open)>.pcards{display:none}
+  .ptheme.open>.pcards{margin-top:12px}
   .pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:13px}
   .pcardx{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c);
        border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;transition:border-color .12s}
@@ -342,7 +353,9 @@
 <div class="wrap" id="view-posters" hidden>
   <div class="ctl" id="pctl" hidden>
     <input type="search" id="pq" placeholder="Search poster title, author or affiliation…">
+    <label class="chk"><input type="checkbox" id="pstaronly"> starred only</label>
     <span class="acount" id="pcount"></span>
+    <button type="button" id="pexport" class="mini" title="Download the posters in your starred topics as a CSV">⬇ Export starred</button>
   </div>
   <div class="pstreams" id="pstreams"></div>
   <div id="posters"></div>
@@ -995,11 +1008,15 @@ else { renderKpis(); renderMap(); render(); }
     // ---- full per-poster view (local build; window.POSTERS present) ----
     const THEMES = window.POSTER_THEMES || {};
     const ctl = document.getElementById('pctl'), qEl = document.getElementById('pq'), countEl = document.getElementById('pcount');
+    const starOnlyEl = document.getElementById('pstaronly'), exportEl = document.getElementById('pexport');
     ctl.hidden = false;
-    note.innerHTML = 'Every poster in the programme, grouped by session and topic category. Search by title, author or affiliation; tap a day to narrow. <b>PDF</b> opens the poster file (where provided). Times are local (Edinburgh).';
+    note.innerHTML = 'Every poster in the programme, grouped by session and topic. Tap a topic to expand it; tap ☆ to star topics you care about, then <b>Export starred</b> for a CSV. Search and the day filter narrow the list. <b>PDF</b> opens the poster file. Times are local (Edinburgh).';
+
+    const STAR = new Set(JSON.parse(localStorage.getItem('eps_poster_topics')||'[]'));
+    const saveStar = ()=>localStorage.setItem('eps_poster_topics', JSON.stringify([...STAR]));
 
     function render(){
-      const q = (qEl.value||'').trim().toLowerCase();
+      const q = (qEl.value||'').trim().toLowerCase(), starOnly = starOnlyEl.checked;
       let list = POS;
       if(q) list = list.filter(p=>(p.t+' '+p.a+' '+p.o).toLowerCase().includes(q));
       const bySid = {};
@@ -1008,30 +1025,61 @@ else { renderKpis(); renderMap(); render(); }
       for(const s of sessions){
         if(filter && s.date!==filter) continue;
         const ps = bySid[s.id]; if(!ps || !ps.length) continue;
-        shown += ps.length;
-        if(s.date!==lastDay){ h+=`<div class="pday">${esc(s.dayLabel)}</div>`; lastDay=s.date; }
         const order=[], byTh={};
         for(const p of ps){ if(!byTh[p.th]){ byTh[p.th]=[]; order.push(p.th); } byTh[p.th].push(p); }
-        order.sort();
-        const themes = order.map(code=>{
-          const st = streamOf(code), desc = THEMES[code] || STREAMS[st] || '';
+        let codes = order.sort();
+        if(starOnly) codes = codes.filter(c=>STAR.has(c));
+        if(!codes.length) continue;
+        shown += codes.reduce((n,c)=>n+byTh[c].length, 0);
+        if(s.date!==lastDay){ h+=`<div class="pday">${esc(s.dayLabel)}</div>`; lastDay=s.date; }
+        const themes = codes.map(code=>{
+          const st = streamOf(code), desc = THEMES[code] || STREAMS[st] || '', starred = STAR.has(code);
+          const open = q || starOnly || starred;   // expand on search, in starred-only, or if starred
           const cards = byTh[code].map(p=>
             `<div class="pcardx st-${st}"><div class="pt">${esc(p.t)}</div>`+
             `<div class="pcf"><span class="pa"><b>${esc(p.a)}</b>${p.o?' · '+esc(p.o):''}</span>`+
             (p.pdf?`<a class="pdf" href="${esc(p.pdf)}" target="_blank" rel="noopener">PDF ↗</a>`:'')+
             `</div></div>`).join('');
-          return `<div class="ptheme st-${st}"><div class="sh"><span class="code">${esc(code)}</span>`+
-                 `<span class="td">${esc(desc)}</span><span class="tn">${byTh[code].length}</span></div>`+
+          return `<div class="ptheme st-${st}${open?' open':''}"><div class="sh"><span class="ca">▸</span>`+
+                 `<span class="code">${esc(code)}</span><span class="td">${esc(desc)}</span>`+
+                 `<span class="tn">${byTh[code].length}</span>`+
+                 `<button type="button" class="star${starred?' on':''}" data-code="${esc(code)}" `+
+                 `title="Star this topic" aria-pressed="${starred}">${starred?'★':'☆'}</button></div>`+
                  `<div class="pcards">${cards}</div></div>`;
         }).join('');
         h+=`<div class="psession"><h3>${esc(shortName(s.name))}</h3>`+
            `<div class="pmeta"><span>${esc(wd(s.dayLabel))} ${fmtT(s.s)}–${fmtT(s.e)}</span>`+
            `${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}<span>${ps.length} poster${ps.length===1?'':'s'}</span></div>${themes}</div>`;
       }
-      countEl.textContent = shown===POS.length ? `${POS.length} posters` : `${shown} of ${POS.length} posters`;
+      const starN = STAR.size;
+      countEl.textContent = `${shown===POS.length?POS.length:shown+' of '+POS.length} posters`+
+        (starN?` · ${starN} topic${starN===1?'':'s'} starred`:'');
       cont.innerHTML = h || '<div class="aempty">No posters match.</div>';
+      cont.querySelectorAll('.ptheme').forEach(t=>{
+        t.querySelector('.sh').onclick = e=>{ if(!e.target.closest('.star')) t.classList.toggle('open'); };
+        const sb = t.querySelector('.star');
+        sb.onclick = e=>{ e.stopPropagation(); const c=sb.dataset.code; STAR.has(c)?STAR.delete(c):STAR.add(c); saveStar(); render(); };
+      });
     }
+
+    function exportStarred(){
+      const rows = POS.filter(p=>STAR.has(p.th));
+      if(!rows.length){ alert('No starred topics yet. Tap the ☆ on a topic heading to star it.'); return; }
+      const sof = id => sessions.find(s=>s.id===id) || {};
+      const cell = v => { v=String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+      rows.sort((a,b)=> a.th<b.th?-1 : a.th>b.th?1 : a.a.localeCompare(b.a));
+      const out = [['Topic','Topic name','Title','Author','Affiliation','Day','Time','Room','PDF'].join(',')];
+      for(const p of rows){ const s=sof(p.sid);
+        out.push([p.th, THEMES[p.th]||STREAMS[streamOf(p.th)]||'', p.t, p.a, p.o,
+          wd(s.dayLabel||''), (s.s?fmtT(s.s)+'–'+fmtT(s.e):''), s.loc||'', p.pdf||''].map(cell).join(',')); }
+      const blob = new Blob([out.join('\r\n')], {type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = 'eps_posters_starred.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
     qEl.oninput = render;
+    starOnlyEl.onchange = render;
+    exportEl.onclick = exportStarred;
     renderChips(dayChips, render);
     render();
     return;

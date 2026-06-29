@@ -27,6 +27,8 @@ window.affType = (function(){
     "cosylab":"company","eni":"company","general fusion":"company",
     "nature portfolio":"company","am space":"company",
     "dtt scarl":"org","comisión chilena de energía nuclear":"org",
+    "infn-lns":"inst","extreme light infrastructure":"inst",
+    "springer nature":"company","focused energy":"company","usp":"uni",
   };
 
   // checked in order, first match wins

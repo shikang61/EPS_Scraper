@@ -6,3 +6,5 @@ attendees_by_affiliation.json
 _sample_record.json
 agenda_raw.json
 .vercel/
+probe_dump/
+posters_raw.json

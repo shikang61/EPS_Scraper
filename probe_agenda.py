@@ -3,6 +3,10 @@
 against every component blob, and dump the agenda/sessions one locally so we can
 build the agenda viewer. Writes agenda_raw.json (gitignored). Throwaway.
 
+Every decoded blob is also written to probe_dump/ (gitignored) and scored for
+poster/abstract keywords, so a per-poster blob (titles/authors/board numbers)
+can be located by hand — inspect the top "poster=" candidates it prints.
+
 The attendee blob uses AttendeesDataKey.Key; other components (agenda etc.) use
 different keys, so we brute-try every key string we can find in UserDetails.
 
@@ -15,6 +19,9 @@ from eps_scraper import login, APP_ID, BLOB_BASE, AES_IV, AES_SALT, AES_ITERS, A
 
 SESSIONY = {"start", "end", "title", "room", "track", "presenter", "speaker",
             "session", "abstract", "venue", "location", "time", "chair", "date"}
+# keys that suggest a per-poster / abstract-book blob (titles, authors, board numbers)
+POSTERY = {"poster", "board", "abstract", "author", "presenter", "title", "paper"}
+DUMP_DIR = "probe_dump"
 
 
 def fetch(storage_id):
@@ -54,7 +61,7 @@ def collect_keys(obj, found, path=""):
             collect_keys(v, found, path + f"[{i}].")
 
 
-def session_score(obj):
+def all_keys(obj):
     keys = set()
 
     def collect(o, depth=0):
@@ -68,7 +75,11 @@ def session_score(obj):
             for x in o[:3]:
                 collect(x, depth + 1)
     collect(obj)
-    return sum(1 for k in keys if any(t in k for t in SESSIONY))
+    return keys
+
+
+def kw_score(keys, terms):
+    return sum(1 for k in keys if any(t in k for t in terms))
 
 
 def main():
@@ -89,7 +100,8 @@ def main():
     comps = manifest["ComponentDataManifests"]
     print(f"{len(comps)} components.\n", file=sys.stderr)
 
-    decoded = []  # (score, sid, obj)
+    os.makedirs(DUMP_DIR, exist_ok=True)
+    decoded = []  # (session_score, poster_score, sid, obj)
     for c in comps:
         sid = c["DataStorageId"]
         blob = fetch(sid)
@@ -105,19 +117,33 @@ def main():
         if obj is None:
             print(f"  {sid}  NO KEY WORKED", file=sys.stderr)
             continue
-        score = session_score(obj)
+        keys = all_keys(obj)
+        score, pscore = kw_score(keys, SESSIONY), kw_score(keys, POSTERY)
         shape = (f"list({len(obj)})" if isinstance(obj, list)
                  else f"dict[{','.join(list(obj)[:8])}]" if isinstance(obj, dict)
                  else type(obj).__name__)
-        print(f"  {sid}  score={score:2}  {shape}", file=sys.stderr)
-        decoded.append((score, sid, obj))
+        # dump every decoded blob so a posters/abstracts component can be found by hand
+        with open(f"{DUMP_DIR}/{sid}.json", "w") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2)
+        print(f"  {sid}  agenda={score:2} poster={pscore:2}  {shape}", file=sys.stderr)
+        decoded.append((score, pscore, sid, obj))
 
     if not decoded:
         raise SystemExit("Nothing decoded — keys may live elsewhere.")
 
     decoded.sort(reverse=True, key=lambda t: t[0])
-    score, sid, obj = decoded[0]
-    print(f"\nBest agenda candidate: {sid} (score {score})", file=sys.stderr)
+    score, _, sid, obj = decoded[0]
+    print(f"\nBest agenda candidate: {sid} (agenda score {score})", file=sys.stderr)
+
+    # surface likely per-poster / abstract blobs for the user to inspect
+    pcands = sorted(decoded, key=lambda t: -t[1])
+    print(f"\nAll {len(decoded)} decoded blob(s) dumped to {DUMP_DIR}/. "
+          f"Top poster/abstract candidates:", file=sys.stderr)
+    for s, ps, psid, pobj in pcands[:5]:
+        shape = (f"list({len(pobj)})" if isinstance(pobj, list)
+                 else f"dict[{','.join(list(pobj)[:8])}]" if isinstance(pobj, dict)
+                 else type(pobj).__name__)
+        print(f"   poster={ps:2} agenda={s:2}  {DUMP_DIR}/{psid}.json  {shape}", file=sys.stderr)
 
     with open("agenda_raw.json", "w") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)

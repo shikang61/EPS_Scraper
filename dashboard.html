@@ -224,6 +224,51 @@
     select#astream{max-width:none;flex:1 1 100%}
     .acount{margin-left:0}
   }
+  /* posters view */
+  .st-MCF{--c:#3b82f6} .st-BPIF{--c:#f97316} .st-BSAP{--c:#a855f7} .st-LTDP{--c:#10b981}
+  .pstreams{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 6px}
+  .pchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);
+       color:var(--txt);border-radius:22px;padding:7px 14px;font-size:13px;font-weight:650;cursor:pointer;transition:border-color .12s,background .12s}
+  .pchip .sw{width:11px;height:11px;border-radius:50%;background:var(--c,#8b9ab5);flex:none}
+  .pchip:hover{border-color:var(--c,var(--accent))}
+  .pchip.on{background:color-mix(in srgb,var(--c,var(--accent)) 16%,var(--panel));border-color:var(--c,var(--accent))}
+  .pday{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin:24px 2px 11px}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:15px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .pcard h3{margin:0 0 4px;font-size:16px;font-weight:700;line-height:1.25}
+  .pcard .pmeta{display:flex;flex-wrap:wrap;gap:5px 13px;color:var(--muted);font-size:12.5px;
+       margin-bottom:13px;align-items:center;font-variant-numeric:tabular-nums}
+  .pstream{margin-top:13px} .pstream:first-of-type{margin-top:0}
+  .pstream .sh{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;color:var(--c);
+       letter-spacing:.03em;margin-bottom:6px;text-transform:uppercase}
+  .pstream .sh .sw{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none}
+  .pcat{display:flex;gap:10px;align-items:baseline;padding:3px 0;font-size:13.5px;line-height:1.4}
+  .pcat .code{flex:none;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--c);
+       background:color-mix(in srgb,var(--c) 15%,transparent);border-radius:6px;padding:2px 7px;min-width:50px;text-align:center}
+  .pcat .ct{color:var(--txt)}
+  /* posters: per-poster (full) view */
+  .psession{margin:0 0 32px}
+  .psession>h3{margin:0;font-size:17px;font-weight:700;line-height:1.25}
+  .psession .pmeta{display:flex;flex-wrap:wrap;gap:5px 14px;color:var(--muted);font-size:13px;
+       margin-top:5px;align-items:center;font-variant-numeric:tabular-nums}
+  .ptheme{margin-top:26px}
+  .ptheme .sh{display:flex;align-items:baseline;gap:10px;font-size:15.5px;font-weight:800;color:var(--c);
+       letter-spacing:.02em;margin-bottom:13px}
+  .ptheme .sh .code{font-variant-numeric:tabular-nums}
+  .ptheme .sh .td{color:var(--txt);font-weight:700;text-transform:none;letter-spacing:0}
+  .ptheme .sh .tn{color:var(--muted);font-weight:600;font-size:12.5px;margin-left:auto}
+  .pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:13px}
+  .pcardx{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c);
+       border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;transition:border-color .12s}
+  .pcardx:hover{border-color:var(--c)}
+  .pcardx .pt{font-weight:650;font-size:13.5px;line-height:1.4;overflow-wrap:anywhere}
+  .pcardx .pcf{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:auto}
+  .pcardx .pa{color:var(--muted);font-size:12.5px;min-width:0;line-height:1.35}
+  .pcardx .pa b{color:var(--txt);font-weight:600}
+  .pcardx a.pdf{flex:none;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--c);text-decoration:none;
+       border:1px solid color-mix(in srgb,var(--c) 45%,var(--line));border-radius:7px;padding:3px 9px;align-self:center}
+  .pcardx a.pdf:hover{background:color-mix(in srgb,var(--c) 14%,transparent)}
+  @media(max-width:600px){ .pgrid,.pcards{grid-template-columns:1fr} }
   footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){
@@ -248,6 +293,7 @@
   <nav class="tabs">
     <button class="tab on" id="tabAtt" type="button">Attendees</button>
     <button class="tab" id="tabAg" type="button">Agenda</button>
+    <button class="tab" id="tabPo" type="button">Posters</button>
   </nav>
   <div class="clock" id="clock"></div>
   <button id="theme" class="themebtn" title="Toggle light / dark" aria-label="Toggle theme"></button>
@@ -293,6 +339,16 @@
   <div class="note" style="max-width:1280px;margin:14px auto 0;padding:0 0">Tap a session card to tick it onto your agenda; tap the ▾ to read its abstract. Overlapping sessions are mutually exclusive — picking one clears any that clash with it. Selections are saved in this browser. <b>Export .ics</b> downloads them as a calendar file you can open in Apple Calendar, Google Calendar or Outlook.</div>
 </div>
 
+<div class="wrap" id="view-posters" hidden>
+  <div class="ctl" id="pctl" hidden>
+    <input type="search" id="pq" placeholder="Search poster title, author or affiliation…">
+    <span class="acount" id="pcount"></span>
+  </div>
+  <div class="pstreams" id="pstreams"></div>
+  <div id="posters"></div>
+  <div class="note" id="pnote" style="max-width:1280px;margin:16px auto 0"></div>
+</div>
+
 <footer id="foot"></footer>
 <div class="maptip" id="maptip"></div>
 
@@ -302,6 +358,7 @@
 <script src="affil_type.js"></script>
 <script src="world_map.js"></script>
 <script src="agenda_data.js"></script>
+<script src="posters_data.js"></script>
 <script>
 // ---- Edinburgh local time (independent of the viewer's timezone) ----
 window.EDIN = (function(){
@@ -898,13 +955,136 @@ else { renderKpis(); renderMap(); render(); }
   tick(); setInterval(tick, 30000);
 })();
 
+// ================= POSTERS =================
+(function(){
+  const AG = window.AGENDA || [];
+  const sessions = AG.filter(i=>/poster session/i.test(i.name||''))
+    .sort((a,b)=> a.date<b.date?-1 : a.date>b.date?1 : (a.s<b.s?-1:1));
+  const cont = document.getElementById('posters');
+  if(!sessions.length){ cont.innerHTML='<div class="aempty">No poster sessions found.</div>'; return; }
+
+  const STREAMS = {
+    MCF:  'Magnetic Confinement Fusion',
+    BPIF: 'Beam Plasma & Inertial Fusion',
+    BSAP: 'Basic, Space & Astrophysical Plasmas',
+    LTDP: 'Low-Temperature & Dusty Plasmas',
+  };
+  const fmtT = h => h && h.length===4 ? h.slice(0,2)+':'+h.slice(2) : (h||'');
+  const wd   = lbl => (lbl||'').split(',')[0];
+  const shortName = n => { const m=(n||'').match(/poster session\s*(\d+)/i);
+    return m ? `Poster Session ${m[1]}` : (n||'').replace(/^[^:]*:\s*/,''); };
+  const streamOf = code => { const m=(code||'').match(/^[A-Za-z]+/); return m ? m[0].toUpperCase() : ''; };
+  const chipsEl = document.getElementById('pstreams'), note = document.getElementById('pnote');
+  let filter = '';
+
+  function renderChips(present, allLabel, onPick){
+    chipsEl.innerHTML =
+      `<button type="button" class="pchip${filter===''?' on':''}" data-s="">${esc(allLabel)}</button>`+
+      present.map(s=>`<button type="button" class="pchip st-${s}${filter===s?' on':''}" data-s="${s}">`+
+        `<span class="sw"></span>${s} · ${esc(STREAMS[s]||s)}</button>`).join('');
+    chipsEl.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{ filter=b.dataset.s; renderChips(present,allLabel,onPick); onPick(); });
+  }
+
+  const POS = (window.POSTERS && window.POSTERS.length) ? window.POSTERS : null;
+
+  if(POS){
+    // ---- full per-poster view (local build; window.POSTERS present) ----
+    const THEMES = window.POSTER_THEMES || {};
+    const ctl = document.getElementById('pctl'), qEl = document.getElementById('pq'), countEl = document.getElementById('pcount');
+    ctl.hidden = false;
+    note.innerHTML = 'Every poster in the programme, grouped by session and topic category. Search by title, author or affiliation; tap a research-area chip to narrow. <b>PDF</b> opens the poster file (where provided). Times are local (Edinburgh).';
+    const present = [...new Set(POS.map(p=>streamOf(p.th)))].filter(s=>STREAMS[s]).sort();
+
+    function render(){
+      const q = (qEl.value||'').trim().toLowerCase();
+      let list = POS;
+      if(filter) list = list.filter(p=>streamOf(p.th)===filter);
+      if(q) list = list.filter(p=>(p.t+' '+p.a+' '+p.o).toLowerCase().includes(q));
+      countEl.textContent = list.length===POS.length ? `${POS.length} posters` : `${list.length} of ${POS.length} posters`;
+      const bySid = {};
+      for(const p of list){ (bySid[p.sid] ||= []).push(p); }
+      let h='', lastDay=null;
+      for(const s of sessions){
+        const ps = bySid[s.id]; if(!ps || !ps.length) continue;
+        if(s.date!==lastDay){ h+=`<div class="pday">${esc(s.dayLabel)}</div>`; lastDay=s.date; }
+        const order=[], byTh={};
+        for(const p of ps){ if(!byTh[p.th]){ byTh[p.th]=[]; order.push(p.th); } byTh[p.th].push(p); }
+        order.sort();
+        const themes = order.map(code=>{
+          const st = streamOf(code), desc = THEMES[code] || STREAMS[st] || '';
+          const cards = byTh[code].map(p=>
+            `<div class="pcardx st-${st}"><div class="pt">${esc(p.t)}</div>`+
+            `<div class="pcf"><span class="pa"><b>${esc(p.a)}</b>${p.o?' · '+esc(p.o):''}</span>`+
+            (p.pdf?`<a class="pdf" href="${esc(p.pdf)}" target="_blank" rel="noopener">PDF ↗</a>`:'')+
+            `</div></div>`).join('');
+          return `<div class="ptheme st-${st}"><div class="sh"><span class="code">${esc(code)}</span>`+
+                 `<span class="td">${esc(desc)}</span><span class="tn">${byTh[code].length}</span></div>`+
+                 `<div class="pcards">${cards}</div></div>`;
+        }).join('');
+        h+=`<div class="psession"><h3>${esc(shortName(s.name))}</h3>`+
+           `<div class="pmeta"><span>${esc(wd(s.dayLabel))} ${fmtT(s.s)}–${fmtT(s.e)}</span>`+
+           `${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}<span>${ps.length} poster${ps.length===1?'':'s'}</span></div>${themes}</div>`;
+      }
+      cont.innerHTML = h || '<div class="aempty">No posters match.</div>';
+    }
+    qEl.oninput = render;
+    renderChips(present, 'All areas', render);
+    render();
+    return;
+  }
+
+  // ---- fallback: topic-category view (public deploy, no per-poster data) ----
+  note.textContent = 'Poster sessions and the topic categories presented in each. Tap a research-area chip to show only sessions covering it. Per-poster titles & authors load in the local build only. Times are local (Edinburgh).';
+  function cats(details){
+    return (details||'').split('\n').map(l=>l.trim())
+      .filter(l=>l && !/^[_\s]+$/.test(l))
+      .map(l=>{ const m=l.match(/^([A-Za-z]+)\s*(\d+)\s+(.+)$/); if(!m) return null;
+        const stream=m[1].toUpperCase(); return {stream, code:stream+m[2], desc:m[3].trim()}; })
+      .filter(Boolean);
+  }
+  const items = sessions.map(s=>({s, cat:cats(s.details)}));
+  const present = [...new Set(items.flatMap(it=>it.cat.map(c=>c.stream)))].filter(s=>STREAMS[s]).sort();
+
+  function render(){
+    const shown = filter ? items.filter(it=>it.cat.some(c=>c.stream===filter)) : items;
+    const days = [];
+    for(const it of shown){ let g=days.find(x=>x.date===it.s.date);
+      if(!g){ g={date:it.s.date, label:it.s.dayLabel, list:[]}; days.push(g); } g.list.push(it); }
+    let h='';
+    for(const g of days){
+      h+=`<div class="pday">${esc(g.label)}</div><div class="pgrid">`;
+      for(const {s,cat} of g.list){
+        const order=[], byS={};
+        for(const c of cat){ if(!byS[c.stream]){ byS[c.stream]=[]; order.push(c.stream); } byS[c.stream].push(c); }
+        const streams = order.map(st=>{
+          const rows = byS[st].map(c=>`<div class="pcat"><span class="code">${esc(c.code)}</span><span class="ct">${esc(c.desc)}</span></div>`).join('');
+          return `<div class="pstream st-${st}"><div class="sh"><span class="sw"></span>${esc(st)} · ${esc(STREAMS[st]||st)}</div>${rows}</div>`;
+        }).join('');
+        h+=`<div class="pcard"><h3>${esc(shortName(s.name))}</h3>`+
+           `<div class="pmeta"><span>${esc(wd(s.dayLabel))} ${fmtT(s.s)}–${fmtT(s.e)}</span>${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}</div>`+
+           (streams||'<div class="pcat"><span class="ct">Topic categories not listed.</span></div>')+`</div>`;
+      }
+      h+=`</div>`;
+    }
+    cont.innerHTML = h || '<div class="aempty">No poster sessions match.</div>';
+  }
+  renderChips(present, 'All sessions', render);
+  render();
+})();
+
 // ================= view tabs =================
 (function(){
-  const att=document.getElementById('view-attendees'), ag=document.getElementById('view-agenda');
-  const ta=document.getElementById('tabAtt'), tg=document.getElementById('tabAg');
-  const show = v=>{ const isAg=v==='agenda'; att.hidden=isAg; ag.hidden=!isAg;
-    ta.classList.toggle('on',!isAg); tg.classList.toggle('on',isAg); localStorage.setItem('eps_view',v); };
-  ta.onclick=()=>show('attendees'); tg.onclick=()=>show('agenda');
+  const views = {attendees:'view-attendees', agenda:'view-agenda', posters:'view-posters'};
+  const tabs  = {attendees:'tabAtt', agenda:'tabAg', posters:'tabPo'};
+  const show = v=>{
+    if(!views[v]) v='attendees';
+    for(const k in views){
+      document.getElementById(views[k]).hidden = k!==v;
+      document.getElementById(tabs[k]).classList.toggle('on', k===v);
+    }
+    localStorage.setItem('eps_view', v);
+  };
+  for(const k in tabs) document.getElementById(tabs[k]).onclick=()=>show(k);
   show(localStorage.getItem('eps_view')||'attendees');
 })();
 </script>

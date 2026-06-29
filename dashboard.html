@@ -975,15 +975,19 @@ else { renderKpis(); renderMap(); render(); }
     return m ? `Poster Session ${m[1]}` : (n||'').replace(/^[^:]*:\s*/,''); };
   const streamOf = code => { const m=(code||'').match(/^[A-Za-z]+/); return m ? m[0].toUpperCase() : ''; };
   const chipsEl = document.getElementById('pstreams'), note = document.getElementById('pnote');
-  let filter = '';
+  let filter = '';   // '' = all days, else a date (YYYY-MM-DD)
 
-  function renderChips(present, allLabel, onPick){
-    chipsEl.innerHTML =
-      `<button type="button" class="pchip${filter===''?' on':''}" data-s="">${esc(allLabel)}</button>`+
-      present.map(s=>`<button type="button" class="pchip st-${s}${filter===s?' on':''}" data-s="${s}">`+
-        `<span class="sw"></span>${s} · ${esc(STREAMS[s]||s)}</button>`).join('');
-    chipsEl.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{ filter=b.dataset.s; renderChips(present,allLabel,onPick); onPick(); });
+  // chips: [{val, label}] — val '' is the "all" chip
+  function renderChips(chips, onPick){
+    chipsEl.innerHTML = chips.map(c=>
+      `<button type="button" class="pchip${filter===c.val?' on':''}" data-s="${esc(c.val)}">${esc(c.label)}</button>`).join('');
+    chipsEl.querySelectorAll('.pchip').forEach(b=>b.onclick=()=>{ filter=b.dataset.s; renderChips(chips,onPick); onPick(); });
   }
+  // "Monday, June 29, 2026" -> "Mon 29 Jun"
+  const dayLabel = lbl => { const m=(lbl||'').match(/^(\w+),\s*(\w+)\s+(\d+)/);
+    return m ? `${m[1].slice(0,3)} ${m[3]} ${m[2].slice(0,3)}` : (lbl||''); };
+  const dayChips = [{val:'', label:'All days'}].concat(
+    [...new Map(sessions.map(s=>[s.date, s.dayLabel])).entries()].map(([d,lbl])=>({val:d, label:dayLabel(lbl)})));
 
   const POS = (window.POSTERS && window.POSTERS.length) ? window.POSTERS : null;
 
@@ -992,20 +996,19 @@ else { renderKpis(); renderMap(); render(); }
     const THEMES = window.POSTER_THEMES || {};
     const ctl = document.getElementById('pctl'), qEl = document.getElementById('pq'), countEl = document.getElementById('pcount');
     ctl.hidden = false;
-    note.innerHTML = 'Every poster in the programme, grouped by session and topic category. Search by title, author or affiliation; tap a research-area chip to narrow. <b>PDF</b> opens the poster file (where provided). Times are local (Edinburgh).';
-    const present = [...new Set(POS.map(p=>streamOf(p.th)))].filter(s=>STREAMS[s]).sort();
+    note.innerHTML = 'Every poster in the programme, grouped by session and topic category. Search by title, author or affiliation; tap a day to narrow. <b>PDF</b> opens the poster file (where provided). Times are local (Edinburgh).';
 
     function render(){
       const q = (qEl.value||'').trim().toLowerCase();
       let list = POS;
-      if(filter) list = list.filter(p=>streamOf(p.th)===filter);
       if(q) list = list.filter(p=>(p.t+' '+p.a+' '+p.o).toLowerCase().includes(q));
-      countEl.textContent = list.length===POS.length ? `${POS.length} posters` : `${list.length} of ${POS.length} posters`;
       const bySid = {};
       for(const p of list){ (bySid[p.sid] ||= []).push(p); }
-      let h='', lastDay=null;
+      let h='', lastDay=null, shown=0;
       for(const s of sessions){
+        if(filter && s.date!==filter) continue;
         const ps = bySid[s.id]; if(!ps || !ps.length) continue;
+        shown += ps.length;
         if(s.date!==lastDay){ h+=`<div class="pday">${esc(s.dayLabel)}</div>`; lastDay=s.date; }
         const order=[], byTh={};
         for(const p of ps){ if(!byTh[p.th]){ byTh[p.th]=[]; order.push(p.th); } byTh[p.th].push(p); }
@@ -1025,16 +1028,17 @@ else { renderKpis(); renderMap(); render(); }
            `<div class="pmeta"><span>${esc(wd(s.dayLabel))} ${fmtT(s.s)}–${fmtT(s.e)}</span>`+
            `${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}<span>${ps.length} poster${ps.length===1?'':'s'}</span></div>${themes}</div>`;
       }
+      countEl.textContent = shown===POS.length ? `${POS.length} posters` : `${shown} of ${POS.length} posters`;
       cont.innerHTML = h || '<div class="aempty">No posters match.</div>';
     }
     qEl.oninput = render;
-    renderChips(present, 'All areas', render);
+    renderChips(dayChips, render);
     render();
     return;
   }
 
   // ---- fallback: topic-category view (public deploy, no per-poster data) ----
-  note.textContent = 'Poster sessions and the topic categories presented in each. Tap a research-area chip to show only sessions covering it. Per-poster titles & authors load in the local build only. Times are local (Edinburgh).';
+  note.textContent = 'Poster sessions and the topic categories presented in each. Tap a day to narrow. Per-poster titles & authors load in the local build only. Times are local (Edinburgh).';
   function cats(details){
     return (details||'').split('\n').map(l=>l.trim())
       .filter(l=>l && !/^[_\s]+$/.test(l))
@@ -1043,10 +1047,9 @@ else { renderKpis(); renderMap(); render(); }
       .filter(Boolean);
   }
   const items = sessions.map(s=>({s, cat:cats(s.details)}));
-  const present = [...new Set(items.flatMap(it=>it.cat.map(c=>c.stream)))].filter(s=>STREAMS[s]).sort();
 
   function render(){
-    const shown = filter ? items.filter(it=>it.cat.some(c=>c.stream===filter)) : items;
+    const shown = filter ? items.filter(it=>it.s.date===filter) : items;
     const days = [];
     for(const it of shown){ let g=days.find(x=>x.date===it.s.date);
       if(!g){ g={date:it.s.date, label:it.s.dayLabel, list:[]}; days.push(g); } g.list.push(it); }
@@ -1068,7 +1071,7 @@ else { renderKpis(); renderMap(); render(); }
     }
     cont.innerHTML = h || '<div class="aempty">No poster sessions match.</div>';
   }
-  renderChips(present, 'All sessions', render);
+  renderChips(dayChips, render);
   render();
 })();
 

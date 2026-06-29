@@ -19,6 +19,12 @@
   body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
        background:var(--bg);color:var(--txt)}
   header{padding:24px 28px 8px;position:relative}
+  .clock{position:absolute;top:16px;left:50%;transform:translateX(-50%);
+       display:flex;align-items:center;gap:9px;line-height:1;font-variant-numeric:tabular-nums}
+  .clock .t{font-size:32px;font-weight:700;letter-spacing:.01em}
+  .clock .d{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .clock .live{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none;
+       box-shadow:0 0 0 0 var(--accent);animation:apulse 2s infinite}
   .themebtn{position:absolute;top:20px;right:28px;background:var(--panel2);color:var(--txt);
        border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:15px;cursor:pointer;line-height:1}
   .themebtn:hover{border-color:var(--accent)}
@@ -175,6 +181,17 @@
   select#astream{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
        border-radius:9px;padding:10px 13px;font-size:14px;cursor:pointer;max-width:260px}
   .acount{color:var(--muted);font-size:13px;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .nowline .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+       box-shadow:0 0 0 0 var(--accent);animation:apulse 2s infinite}
+  @keyframes apulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}
+       70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .nowline{display:flex;align-items:center;gap:9px;margin:14px 2px 8px;color:var(--accent);
+       font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+       font-variant-numeric:tabular-nums}
+  .nowline::after{content:"";flex:1;height:2px;border-radius:2px;
+       background:color-mix(in srgb,var(--accent) 50%,transparent)}
+  .ses.live{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .ses.live .time{color:var(--accent)}
   .slot{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;
        margin:18px 2px 8px;font-variant-numeric:tabular-nums}
   .ses{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);
@@ -191,9 +208,10 @@
   .ses .time small{display:block;color:var(--muted);font-weight:500;font-size:12px}
   .sbody{flex:1;min-width:0}
   .sname{font-weight:650;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
-  .sname .sdc{color:var(--muted);font-size:11px;transition:transform .15s;display:inline-block;
-       cursor:pointer;padding:2px 6px;margin:-2px -2px;border-radius:6px}
-  .sname .sdc:hover{background:var(--panel2);color:var(--txt)}
+  .sname .sdc{color:var(--accent);font-size:15px;font-weight:800;line-height:1;transition:transform .15s,background .15s;
+       display:inline-block;cursor:pointer;padding:3px 8px;margin-left:3px;border-radius:7px;
+       background:color-mix(in srgb,var(--accent) 13%,transparent)}
+  .sname .sdc:hover{background:color-mix(in srgb,var(--accent) 24%,transparent);color:var(--accent)}
   .ses.open .sname .sdc{transform:rotate(180deg)}
   .smeta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:5px;font-size:12px;color:var(--muted);align-items:center}
   .strack{font-weight:700;font-size:11px;border-radius:20px;padding:1px 9px;border:1px solid var(--line);color:var(--txt)}
@@ -209,7 +227,7 @@
   footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
   @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){
-    header{padding:18px 14px 6px}
+    header{padding:18px 14px 10px}
     h1{font-size:18px;padding-right:46px}
     .sub{font-size:12px}
     .wrap{padding:12px 14px 40px}
@@ -217,6 +235,8 @@
     .ctl{gap:8px} select#country{max-width:none;flex:1 1 100%}
     .map{padding:12px 12px 8px}
     .people ul{columns:1}
+    .clock{position:static;transform:none;justify-content:center;margin-top:12px}
+    .clock .t{font-size:26px}
     .themebtn{top:16px;right:14px}
   }
 </style>
@@ -229,6 +249,7 @@
     <button class="tab on" id="tabAtt" type="button">Attendees</button>
     <button class="tab" id="tabAg" type="button">Agenda</button>
   </nav>
+  <div class="clock" id="clock"></div>
   <button id="theme" class="themebtn" title="Toggle light / dark" aria-label="Toggle theme"></button>
 </header>
 
@@ -282,6 +303,15 @@
 <script src="world_map.js"></script>
 <script src="agenda_data.js"></script>
 <script>
+// ---- Edinburgh local time (independent of the viewer's timezone) ----
+window.EDIN = (function(){
+  const fmt = o => new Intl.DateTimeFormat('en-GB', Object.assign({timeZone:'Europe/London'}, o));
+  return {
+    date:  () => new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/London',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),
+    clock: () => fmt({hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()),
+    wd:    () => fmt({weekday:'short'}).format(new Date()),
+  };
+})();
 // ---- event constants (mirror eps_scraper.py) ----
 const APP_ID="114ab0d14ad54df48df8b61dfeca42ca", EVENT_SLUG="eps-edinburgh", SLUG="edinburgh2026";
 const BLOB_BASE="https://airdrive.eventsair.com/eventsairwesteuprod/production-orcula-public";
@@ -656,9 +686,16 @@ function groupByAffiliation(attendees){
     if(!(key in labels)) labels[key] = aff;
     (groups[key] ||= []).push(name);
   }
-  const out = {};
-  for(const [key,names] of Object.entries(groups).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0])))
-    out[labels[key]] = names.sort((x,y)=>x.localeCompare(y));
+  // de-duplicate names within each affiliation (same name + affiliation = one
+  // person registered twice); flag the repeats to the console for review.
+  const out = {}, repeats = [];
+  for(const [key,names] of Object.entries(groups).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0]))){
+    const counts = new Map();
+    for(const n of names) counts.set(n,(counts.get(n)||0)+1);
+    for(const [n,c] of counts) if(c>1) repeats.push(`${c}× ${n} — ${labels[key]}`);
+    out[labels[key]] = [...counts.keys()].sort((x,y)=>x.localeCompare(y));
+  }
+  if(repeats.length) console.warn(`⚠ ${repeats.length} repeated attendee name(s) collapsed to unique:\n`+repeats.join('\n'));
   return out;
 }
 
@@ -723,7 +760,12 @@ else { renderKpis(); renderMap(); render(); }
   const AG = window.AGENDA || [];
   const dayLabels = new Map(AG.map(i=>[i.date, i.dayLabel]));
   const dayList = [...dayLabels.keys()];
-  let curDay = dayList.find(d=>AG.some(i=>i.date===d && i.type==='Session')) || dayList[0];
+  // session start/end are real UTC instants; "now" is compared as a timestamp.
+  // today-detection + the inline "now" marker use Edinburgh local time (see window.EDIN).
+  const edDate = EDIN.date, edClock = EDIN.clock;
+  // default to today if the conference is running, else the first day with sessions
+  let curDay = (dayList.includes(edDate()) ? edDate() : null)
+            || dayList.find(d=>AG.some(i=>i.date===d && i.type==='Session')) || dayList[0];
   let asel = new Set(JSON.parse(localStorage.getItem('eps_agenda_sel')||'[]'));
   const saveSel = ()=>localStorage.setItem('eps_agenda_sel', JSON.stringify([...asel]));
   const byId = new Map(AG.map(i=>[i.id, i]));
@@ -779,11 +821,15 @@ else { renderKpis(); renderMap(); render(); }
     if(selOnly) items = items.filter(i=>asel.has(i.id));
     if(q) items = items.filter(i=>(i.name+' '+i.track+' '+i.loc).toLowerCase().includes(q));
     if(!items.length){ wrap.innerHTML='<div class="aempty">No sessions match.</div>'; return; }
-    let h='', lastS=null;
+    const today = curDay===edDate(), nowMs = Date.now();
+    const nowLine = ()=>`<div class="nowline"><span class="dot"></span>now · ${edClock()}</div>`;
+    let h='', lastS=null, nowDrawn=false;
     for(const it of items){
+      const startMs=new Date(it.start).getTime(), endMs=new Date(it.end).getTime();
+      if(today && !nowDrawn && nowMs < startMs){ h+=nowLine(); nowDrawn=true; }
       if(it.s!==lastS){ h+=`<div class="slot">${fmtT(it.s)} – ${fmtT(it.e)}</div>`; lastS=it.s; }
-      const on = asel.has(it.id);
-      h+=`<div class="ses${on?' sel':''}" data-id="${it.id}">`+
+      const on = asel.has(it.id), live = nowMs>=startMs && nowMs<endMs;
+      h+=`<div class="ses${on?' sel':''}${live?' live':''}" data-id="${it.id}">`+
         `<div class="time">${fmtT(it.s)}<small>${fmtT(it.e)}</small></div>`+
         `<div class="sbody">`+
           `<div class="sname">${esc(it.name)}${it.details?' <span class="sdc">▾</span>':''}</div>`+
@@ -793,6 +839,7 @@ else { renderKpis(); renderMap(); render(); }
         `<span class="tick${on?' on':''}" role="checkbox" aria-checked="${on}" title="Add to my agenda">${on?'✓':''}</span>`+
       `</div>`;
     }
+    if(today && !nowDrawn) h+=nowLine();   // now is past all of today's sessions
     wrap.innerHTML = h;
     wrap.querySelectorAll('.ses').forEach(row=>{
       row.onclick = e=>{
@@ -827,12 +874,28 @@ else { renderKpis(); renderMap(); render(); }
     a.href = url; a.download = 'eps_edinburgh_2026.ics'; a.click(); URL.revokeObjectURL(url);
   }
 
-  if(AG.length){ buildStreamFilter(); renderDays(); renderAgenda(); }
+  if(AG.length){
+    buildStreamFilter(); renderDays(); renderAgenda();
+    // keep the inline "now" marker fresh; skip the repaint while an abstract is open
+    setInterval(()=>{ if(curDay===edDate() && !document.querySelector('#agenda .ses.open')) renderAgenda(); }, 30000);
+  }
   document.getElementById('aq').oninput = renderAgenda;
   document.getElementById('astream').onchange = renderAgenda;
   document.getElementById('aselonly').onchange = renderAgenda;
   document.getElementById('aexport').onclick = exportIcs;
   document.getElementById('aclear').onclick = ()=>{ if(asel.size && confirm('Clear all '+asel.size+' selected session'+(asel.size===1?'':'s')+'?')){ asel.clear(); saveSel(); renderDays(); renderAgenda(); } };
+})();
+
+// ================= header clock =================
+(function(){
+  const el = document.getElementById('clock');
+  const days = new Set((window.AGENDA||[]).map(i=>i.date));   // conference days -> show live pulse
+  function tick(){
+    const live = days.has(EDIN.date());
+    el.innerHTML = (live?'<span class="live"></span>':'')+
+      `<span class="t">${EDIN.clock()}</span><span class="d">${EDIN.wd()} · Edinburgh</span>`;
+  }
+  tick(); setInterval(tick, 30000);
 })();
 
 // ================= view tabs =================

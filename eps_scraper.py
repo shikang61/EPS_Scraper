@@ -34,7 +34,7 @@ import os
 import sys
 import urllib.parse
 import urllib.request
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 # --- Event constants (from the app URL / config) ---------------------------
 APP_ID      = "114ab0d14ad54df48df8b61dfeca42ca"
@@ -202,8 +202,17 @@ def main():
         labels.setdefault(key, aff)
         groups[key].append(name)
 
+    # de-duplicate names within each affiliation (same name + affiliation = one
+    # person registered twice) and collect the repeats to flag below.
+    repeats = []  # (affiliation, name, count)
+    for key, names in groups.items():
+        for name, c in Counter(names).items():
+            if c > 1:
+                repeats.append((labels[key], name, c))
+        groups[key] = sorted(set(names))
+
     # --- outputs ---
-    out_json = {labels[key]: sorted(names) for key, names in
+    out_json = {labels[key]: names for key, names in
                 sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))}
     with open("attendees_by_affiliation.json", "w") as f:
         json.dump(out_json, f, indent=2, ensure_ascii=False)
@@ -227,6 +236,15 @@ def main():
         for n in names:
             print(f"   {n}")
         print()
+    if repeats:
+        dropped = sum(c - 1 for _, _, c in repeats)
+        print(f"⚠  Flagged {len(repeats)} repeated name(s) — collapsed {dropped} "
+              f"duplicate row(s):", file=sys.stderr)
+        for aff, name, c in sorted(repeats, key=lambda r: (-r[2], r[0], r[1])):
+            print(f"     {c}x  {name}  —  {aff}", file=sys.stderr)
+        print("   Note: '(no affiliation)' names are abbreviated; a collision there "
+              "may be two different people.", file=sys.stderr)
+
     print("Wrote attendees_by_affiliation.json and .csv")
 
 

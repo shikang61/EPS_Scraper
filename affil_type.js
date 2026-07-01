@@ -29,6 +29,7 @@ window.affType = (function(){
     "dtt scarl":"org","comisión chilena de energía nuclear":"org",
     "infn-lns":"inst","extreme light infrastructure":"inst",
     "springer nature":"company","focused energy":"company","usp":"uni",
+    "csic":"inst","inaf-iaps":"inst","photek":"company",
   };
 
   // checked in order, first match wins
